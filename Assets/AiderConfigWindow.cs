@@ -1,0 +1,118 @@
+using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
+using UnityEngine;
+
+public struct AiderConfig
+{
+    public string pythonCmd;
+    public string aiderCmd;
+    public string aiderArgs;
+    public string aiderBridgePath;
+    public string modelName;
+    public string providerName;
+    public string apiKey;
+}
+
+public class AiderConfigManager : EditorWindow
+{
+    private AiderConfig config;
+    private string[] models;
+
+    [MenuItem("Aider/Config")]
+    public static void ShowWindow()
+    {
+        GetWindow<AiderConfigManager>("Aider Config");
+    }
+
+    private void OnEnable()
+    {
+        config = LoadConfig();
+        models = File.ReadAllLines("Assets/Backend/models.txt");
+    }
+
+    private void OnGUI()
+    {
+        GUILayout.Label("Aider Config", EditorStyles.boldLabel);
+        GUILayout.Space(20);
+
+        GUILayout.Label("Development Settings", EditorStyles.boldLabel);
+
+        EditorGUILayout.HelpBox("This should be the base command to run python on your system (eg. 'python')", MessageType.Info);
+        config.pythonCmd = EditorGUILayout.TextField("Python Command", config.pythonCmd);
+
+        EditorGUILayout.HelpBox("This should be the command to run aider on your system (eg. 'aider')", MessageType.Info);
+        config.aiderCmd = EditorGUILayout.TextField("Aider Command", config.aiderCmd);
+
+        EditorGUILayout.HelpBox("These are any extra arguments to pass to aider when running it.", MessageType.Info);
+        config.aiderArgs = EditorGUILayout.TextField("Aider Arguments", config.aiderArgs);
+
+        EditorGUILayout.HelpBox("This should be the path to the aider-bridge.py file relative to the asset directory.", MessageType.Info);
+        config.aiderBridgePath = EditorGUILayout.TextField("Aider Bridge Path", config.aiderBridgePath);
+
+        GUILayout.Space(20);
+        
+        GUILayout.Label("Model Settings", EditorStyles.boldLabel);
+        
+        EditorGUILayout.HelpBox("Use `aider --list-models/` to see all model names.", MessageType.Info);
+        EditorGUILayout.BeginHorizontal();
+        config.modelName = EditorGUILayout.TextField("Model Name", config.modelName);
+        // button to list a dropdown of common available models
+        if (GUILayout.Button("Common Models"))
+        {
+            GenericMenu menu = new GenericMenu();
+            foreach (string model in models)
+            {
+                menu.AddItem(new GUIContent(model), false, () => { config.modelName = model; });
+            }
+
+            menu.ShowAsContext();
+        }
+        EditorGUILayout.EndHorizontal();
+
+        config.providerName = config.modelName.Split("/")[0] ?? "unknown";
+        EditorGUI.BeginDisabledGroup(true);
+        config.providerName = EditorGUILayout.TextField("Provider Name", config.providerName);
+        EditorGUI.EndDisabledGroup();
+        config.apiKey = EditorGUILayout.TextField("API Key", config.apiKey);
+
+        GUILayout.Space(40);
+
+        if (GUILayout.Button("Save"))
+        {
+            SaveConfig();
+            Close();
+        }
+    }
+
+    private void SaveConfig()
+    {
+        EditorPrefs.SetString("aider-pythonCmd", config.pythonCmd);
+        EditorPrefs.SetString("aider-aiderCmd", config.aiderCmd);
+        EditorPrefs.SetString("aider-aiderArgs", config.aiderArgs);
+        EditorPrefs.SetString("aider-bridgePath", config.aiderBridgePath);
+        EditorPrefs.SetString("aider-modelName", config.modelName);
+        EditorPrefs.SetString("aider-providerName", config.providerName);
+        EditorPrefs.SetString("aider-apiKey", config.apiKey);
+    }
+
+    public static AiderConfig LoadConfig()
+    {
+        var config = new AiderConfig
+        {
+            pythonCmd = EditorPrefs.GetString("aider-pythonCmd"),
+            aiderCmd = EditorPrefs.GetString("aider-aiderCmd"),
+            aiderArgs = EditorPrefs.GetString("aider-aiderArgs"),
+            aiderBridgePath = EditorPrefs.GetString("aider-bridgePath"),
+            modelName = EditorPrefs.GetString("aider-modelName"),
+            providerName = EditorPrefs.GetString("aider-providerName"),
+            apiKey = EditorPrefs.GetString("aider-apiKey")
+        };
+
+        if (string.IsNullOrEmpty(config.pythonCmd)) config.pythonCmd = "python";
+        if (string.IsNullOrEmpty(config.aiderCmd)) config.aiderCmd = "aider";
+        if (string.IsNullOrEmpty(config.aiderCmd)) config.aiderBridgePath = "Backend/aider-bridge.py";
+
+        return config;
+    }
+}
