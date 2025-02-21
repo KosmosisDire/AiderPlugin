@@ -1,46 +1,84 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
-public class Client : MonoBehaviour
+
+public class Client : Editor
 {
+    static TcpClient client;
+    static NetworkStream stream;
+
+    static bool IsConnected => client != null && stream != null && stream.CanWrite;
+
     [MenuItem("Aider/Connect to Bridge")]
     static void ConnectToBridge()
     {
-        TcpClient client = new();
-        // string portStr = Environment.GetEnvironmentVariable("AIDER_BRIDGE_PORT");
-        
-        // if (string.IsNullOrWhiteSpace(portStr))
-        // {
-        //     Debug.LogError("AIDER_BRIDGE_PORT environment variable is not set");
-        //     return;
-        // }
-
-        // if (!int.TryParse(portStr, out int port))
-        // {
-        //     Debug.LogError("AIDER_BRIDGE_PORT environment variable is not a valid number");
-        //     return;
-        // }
-
+        client = new();
         client.Connect("localhost", 65234);
-
-        NetworkStream stream = client.GetStream();
-        
-        // send "hello world" every 2 seconds async
-        SendHelloWorld(stream);
+        stream = client.GetStream();
     }
 
-    static async void SendHelloWorld(NetworkStream stream)
+    public static void Send(AiderRequest request)
     {
-        int i = 0;
-        while (i < 10)
+        if (!IsConnected)
         {
-            byte[] data = System.Text.Encoding.ASCII.GetBytes("Hello World");
-            await stream.WriteAsync(data, 0, data.Length);
-            await Task.Delay(2000);
-            i++;
+            Debug.LogWarning("Not connected to bridge, trying to connect now...");
+            ConnectToBridge();
+
+            if (!IsConnected)
+            {
+                Debug.LogError("Failed to connect to bridge");
+                return;
+            }
+        }
+
+        byte[] data = request.Serialize();
+        stream.Write(data, 0, data.Length);
+    }
+
+    static CancellationTokenSource cts = new();
+    public static async void AsyncReceive(Action<AiderResponse> callback)
+    {
+        cts.Cancel();
+
+        while (true)
+        {
+            // Debug.Log("Waiting for response");
+            if (!IsConnected)
+            {
+                MainThread.LogError("Not connected to bridge");
+                break;
+            }
+
+            byte[] data = new byte[1024];
+            cts = new();
+            cts.CancelAfter(3000);
+            int bytes = await stream.ReadAsync(data, 0, data.Length, cts.Token);
+
+            if (cts.Token.IsCancellationRequested)
+            {
+                MainThread.LogError("Timed out waiting for response");
+                break;
+            }
+
+            if (bytes == 0)
+            {
+                MainThread.LogError("Connection closed");
+                break;
+            }
+
+            var response = AiderResponse.Deserialize(data);
+            callback(response);
+
+            if (response.Last)
+            {
+                break;
+            }
         }
     }
+
 }
