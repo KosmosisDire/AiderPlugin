@@ -1,28 +1,26 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
-
-public class MainThread : MonoBehaviour
+[ExecuteAlways]
+[InitializeOnLoad]
+public class MainThread
 {
-    private Queue<Action> _actions = new Queue<Action>();
+    static Queue<Action> _actions = new Queue<Action>();
     static MainThread instance;
 
-    private void Awake()
+    static MainThread()
     {
         if (instance == null)
         {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
+            instance = new MainThread();
+            EditorApplication.update += Update;
         }
     }
 
-    private void Update()
-    {
+    static void Update()
+    { 
         lock (_actions)
         {
             while (_actions.Count > 0)
@@ -34,10 +32,25 @@ public class MainThread : MonoBehaviour
 
     public static void RunOnMainThread(Action action)
     {
-        lock (instance._actions)
+        lock (_actions)
         {
-            instance._actions.Enqueue(action);
+            _actions.Enqueue(action);
         }
+    }
+
+    public static void Log(string message)
+    {
+        RunOnMainThread(() => Debug.Log(message));
+    }
+
+    public static void LogError(string message)
+    {
+        RunOnMainThread(() => Debug.LogError(message));
+    }
+
+    public static void LogWarning(string message)
+    {
+        RunOnMainThread(() => Debug.LogWarning(message));
     }
     
 }
