@@ -43,10 +43,10 @@ public class AiderRunner
     public static Process RunAider()
     {
         config = AiderConfigManager.LoadConfig();
-        Environment.SetEnvironmentVariable($"{config.providerName.ToUpper().Replace(" ", "_")}_API_KEY", config.apiKey);
+//        Environment.SetEnvironmentVariable($"{config.providerName.ToUpper().Replace(" ", "_")}_API_KEY", config.apiKey);
         Process aiderProcess = new()
         {
-            StartInfo = new ProcessStartInfo(config.aiderCmd, $"--model {config.modelName}" + config.aiderArgs)
+            StartInfo = new ProcessStartInfo(config.aiderCmd, config.aiderArgs)
             {
                 UseShellExecute = true,
                 CreateNoWindow = false
