@@ -71,8 +71,13 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# aider
 .aider*
 
 # python
 __pycache__/
 __pycache__.meta
+
+# upgrade log
+UpgradeLog.html
