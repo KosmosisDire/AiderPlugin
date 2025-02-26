@@ -30,7 +30,7 @@ def handle_message(message:str) -> str:
 
 	aider_response = coder.chat(user_input)
 
-	return aider_reponse
+	return aider_response
 
 
 def start_server():
