@@ -25,6 +25,9 @@ public class AiderConfigManager : EditorWindow
         public string model;
         public string provider;
         public string apiKey;
+        public string setEnv;
+        public string file;
+        public string read;
         public string reasoningEffort;
         public int? maxChatHistoryTokens;
         public bool? verifySSL;
@@ -36,7 +39,7 @@ public class AiderConfigManager : EditorWindow
         public bool? autoCommits;
         public bool? dirtyCommits;
         public bool? verbose;
-
+        public bool? suggestShellCommands;
 
     }
 
