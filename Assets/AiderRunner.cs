@@ -8,13 +8,13 @@ using UnityEditor.VersionControl;
 [InitializeOnLoad]
 public class AiderRunner
 {
-    static AiderConfig config;
+    static AiderRuntimeOptions config;
     static Process aiderBridge;
     static Process aider;
     
     static AiderRunner()
     {
-        config = AiderConfigManager.LoadConfig();
+        config = AiderConfigManager.LoadRuntimeOptions();
     }
 
     static Process RunPython(string pythonScriptPath)
@@ -37,7 +37,7 @@ public class AiderRunner
     [MenuItem("Aider/Run Aider Bridge")]
     public static Process RunAiderBridge()
     {
-        config = AiderConfigManager.LoadConfig();
+        config = AiderConfigManager.LoadRuntimeOptions();
         aiderBridge = RunPython(config.aiderBridgePath);
         return aiderBridge;
     }
@@ -54,7 +54,7 @@ public class AiderRunner
     [MenuItem("Aider/Run Aider")]
     public static Process RunAider()
     {
-        config = AiderConfigManager.LoadConfig();
+        config = AiderConfigManager.LoadRuntimeOptions();
 //        Environment.SetEnvironmentVariable($"{config.providerName.ToUpper().Replace(" ", "_")}_API_KEY", config.apiKey);
         Process aiderProcess = new()
         {
