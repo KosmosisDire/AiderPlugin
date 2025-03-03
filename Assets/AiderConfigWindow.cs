@@ -5,16 +5,8 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public struct AiderRuntimeOptions
-{
-    public string pythonCmd;
-    public string aiderCmd;
-    public string aiderArgs;
-    public string aiderBridgePath;
-}
 public class AiderConfigManager : EditorWindow
 {
-    private AiderRuntimeOptions runtimeOptions;
     private AiderYamlOptions yamlOptions;
     private string[] models;
     private string yamlConfig;
@@ -53,7 +45,6 @@ public class AiderConfigManager : EditorWindow
 
     private void OnEnable()
     {
-        runtimeOptions = LoadRuntimeOptions();
         yamlOptions = LoadYamlOptions();
         models = File.ReadAllLines("Assets/Backend/models.txt");
         CreateUI();
@@ -65,11 +56,6 @@ public class AiderConfigManager : EditorWindow
         
         var titleLabel = new Label("Aider Config") { style = { unityFontStyleAndWeight = FontStyle.Bold } };
         rootVisualElement.Add(titleLabel);
-
-        AddTextField("Python Command", ref runtimeOptions.pythonCmd, "This should be the base command to run Python on your system (e.g., 'python')");
-        AddTextField("Aider Command", ref runtimeOptions.aiderCmd, "This should be the command to run Aider on your system (e.g., 'aider')");
-        AddTextField("Aider Arguments", ref runtimeOptions.aiderArgs, "Extra arguments to pass to Aider when running it.");
-        AddTextField("Aider Bridge Path", ref runtimeOptions.aiderBridgePath, "Path to the aider-bridge.py file relative to the asset directory.");
 
         var modelField = new TextField("Model Name") { value = yamlOptions.model };
         var providerField = new TextField("Provider Name") { value = GetProviderName(yamlOptions.model), isReadOnly = true };
@@ -92,15 +78,6 @@ public class AiderConfigManager : EditorWindow
         
         var saveButton = new Button(() => SaveConfig()) { text = "Save" };
         rootVisualElement.Add(saveButton);
-    }
-
-    private void AddTextField(string label, ref string field, string tooltip)
-    {
-        var textField = new TextField(label) { value = field, tooltip = tooltip };
-        var localField = field;
-        textField.RegisterValueChangedCallback(evt => localField = evt.newValue);
-        field = localField;
-        rootVisualElement.Add(textField);
     }
 
     private string GetProviderName(string modelName)
@@ -136,10 +113,6 @@ public class AiderConfigManager : EditorWindow
 
     private void SaveConfig()
     {
-        EditorPrefs.SetString("aider-pythonCmd", runtimeOptions.pythonCmd);
-        EditorPrefs.SetString("aider-aiderCmd", runtimeOptions.aiderCmd);
-        EditorPrefs.SetString("aider-aiderArgs", runtimeOptions.aiderArgs);
-        EditorPrefs.SetString("aider-bridgePath", runtimeOptions.aiderBridgePath);
         if  (yamlOptions.model != "")
         {
         yamlData["model"] = yamlOptions.model;
@@ -166,22 +139,5 @@ public class AiderConfigManager : EditorWindow
         };
 
         return yamlConfig;
-    }
-
-      public static AiderRuntimeOptions LoadRuntimeOptions()
-    {
-        var runtimeConfig = new AiderRuntimeOptions
-        {
-            pythonCmd = EditorPrefs.GetString("aider-pythonCmd"),
-            aiderCmd = EditorPrefs.GetString("aider-aiderCmd"),
-            aiderArgs = EditorPrefs.GetString("aider-aiderArgs"),
-            aiderBridgePath = EditorPrefs.GetString("aider-bridgePath"),
-        };
-
-        if (string.IsNullOrEmpty(runtimeConfig.pythonCmd)) runtimeConfig.pythonCmd = "python";
-        if (string.IsNullOrEmpty(runtimeConfig.aiderCmd)) runtimeConfig.aiderCmd = "aider";
-        if (string.IsNullOrEmpty(runtimeConfig.aiderCmd)) runtimeConfig.aiderBridgePath = "Backend/aider-bridge.py";
-
-        return runtimeConfig;
     }
 }

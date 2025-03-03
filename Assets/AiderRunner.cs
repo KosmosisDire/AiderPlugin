@@ -8,16 +8,9 @@ using UnityEditor.VersionControl;
 [InitializeOnLoad]
 public class AiderRunner
 {
-    static AiderRuntimeOptions config;
     static Process aiderBridge;
     static Process aider;
-    
-    static AiderRunner()
-    {
-        config = AiderConfigManager.LoadRuntimeOptions();
-    }
-
-    static Process RunPython(string pythonScriptPath)
+    static Process RunPython(string pythonScriptPath = "Backend/interface.py")
     {
         // assumes python is available on the path (this may be a fine assumption to make?)
         Process pythonProcess = new()
@@ -33,12 +26,10 @@ public class AiderRunner
 
         return pythonProcess;
     }
-
     [MenuItem("Aider/Run Aider Bridge")]
     public static Process RunAiderBridge()
     {
-        config = AiderConfigManager.LoadRuntimeOptions();
-        aiderBridge = RunPython(config.aiderBridgePath);
+        aiderBridge = RunPython("Backend/aider_bridge.py");
         return aiderBridge;
     }
 
@@ -54,11 +45,10 @@ public class AiderRunner
     [MenuItem("Aider/Run Aider")]
     public static Process RunAider()
     {
-        config = AiderConfigManager.LoadRuntimeOptions();
 //        Environment.SetEnvironmentVariable($"{config.providerName.ToUpper().Replace(" ", "_")}_API_KEY", config.apiKey);
         Process aiderProcess = new()
         {
-            StartInfo = new ProcessStartInfo(config.aiderCmd, config.aiderArgs)
+            StartInfo = new ProcessStartInfo("aider")
             {
                 UseShellExecute = true,
                 CreateNoWindow = false
