@@ -9,6 +9,9 @@ using UnityEditor.VersionControl;
 public class AiderRunner
 {
     static AiderConfig config;
+    static Process aiderBridge;
+    static Process aider;
+    
     static AiderRunner()
     {
         config = AiderConfigManager.LoadConfig();
@@ -16,13 +19,13 @@ public class AiderRunner
 
     static Process RunPython(string pythonScriptPath)
     {
-        // assumes python is available on the path (this may be a fine assumption to make)
+        // assumes python is available on the path (this may be a fine assumption to make?)
         Process pythonProcess = new()
         {
             StartInfo = new ProcessStartInfo("python", Path.Combine(Environment.CurrentDirectory, "Assets", pythonScriptPath))
             {
                 UseShellExecute = true,
-                CreateNoWindow = false
+                CreateNoWindow = false,
             }
         };
 
@@ -31,22 +34,31 @@ public class AiderRunner
         return pythonProcess;
     }
 
-    // add menu item to rerun the python script
     [MenuItem("Aider/Run Aider Bridge")]
     public static Process RunAiderBridge()
     {
         config = AiderConfigManager.LoadConfig();
-        return RunPython(config.aiderBridgePath);
+        aiderBridge = RunPython(config.aiderBridgePath);
+        return aiderBridge;
+    }
+
+    [MenuItem("Aider/Kill Aider Bridge")]
+    public static void KillAiderBridge()
+    {
+        if (aiderBridge != null && !aiderBridge.HasExited)
+        {
+            aiderBridge.Kill();
+        }
     }
 
     [MenuItem("Aider/Run Aider")]
     public static Process RunAider()
     {
         config = AiderConfigManager.LoadConfig();
-        Environment.SetEnvironmentVariable($"{config.providerName.ToUpper().Replace(" ", "_")}_API_KEY", config.apiKey);
+//        Environment.SetEnvironmentVariable($"{config.providerName.ToUpper().Replace(" ", "_")}_API_KEY", config.apiKey);
         Process aiderProcess = new()
         {
-            StartInfo = new ProcessStartInfo(config.aiderCmd, $"--model {config.modelName}" + config.aiderArgs)
+            StartInfo = new ProcessStartInfo(config.aiderCmd, config.aiderArgs)
             {
                 UseShellExecute = true,
                 CreateNoWindow = false
@@ -58,26 +70,12 @@ public class AiderRunner
         return aiderProcess;
     }
 
-    public static List<string> GetAllModelNames()
+    [MenuItem("Aider/Kill Aider")]
+    public static void KillAider()
     {
-        Process process = new()
+        if (aider != null && !aider.HasExited)
         {
-            StartInfo = new ProcessStartInfo(config.aiderCmd, "--list-models /")
-            {
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
-        };
-
-        process.Start();
-
-        List<string> modelNames = new();
-        while (!process.StandardOutput.EndOfStream)
-        {
-            modelNames.Add(process.StandardOutput.ReadLine());
+            aider.Kill();
         }
-
-        return modelNames;
     }
 }
