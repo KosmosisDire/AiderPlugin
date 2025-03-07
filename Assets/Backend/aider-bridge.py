@@ -1,7 +1,7 @@
 import random
 import socket
 import time
-from interface import *
+from interface import AiderRequest, AiderResponse
 
 class Server:
     def __init__(self):
