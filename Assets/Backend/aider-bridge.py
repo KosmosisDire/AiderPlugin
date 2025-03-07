@@ -1,56 +1,69 @@
+import random
 import socket
-import sys
-import os
-import json
-from aider.chat import Coder
+import time
+from interface import *
 
-#Initialize Aider Coder Instance
-coder = Coder()
+class Server:
+    def __init__(self):
+        self.host = 'localhost'
+        self.port = 65234
+        self.server_socket = None
+        self.conn = None
+        self.addr = None
+
+    def start(self):
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind((self.host, self.port))
+        actual_port = self.server_socket.getsockname()[1]
+        self.server_socket.listen()
+
+        print(f"Server listening on {self.host}:{actual_port}")
+        self.conn, self.addr = self.server_socket.accept()
+        print(f"Connected on {self.addr}")
+
+    def send(self, message: AiderResponse):
+        self.conn.sendall(message.serialize())
+
+    def simulate_reply(self, string: str):
+        words = string.split(" ")
+        for i, word in enumerate(words):
+            if i < len(words) - 1:
+                self.send(AiderResponse(word + " ", i, False))
+                time.sleep(random.uniform(0.01, 0.2))
+            else:
+                self.send(AiderResponse(word, i, True))
+
+    def receive(self):
+        data = self.conn.recv(1024)
+        if not data:
+            return None
+        return AiderRequest.deserialize(data)
+
+    def close(self):
+        self.conn.close()
+        self.server_socket.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
 
-def handle_message(message:str) -> str:
- """
-	handles incoming messages, decodes them, processes w/ Aider, and returns a response.
-	 both raw text/ Json- formatted as well"""
+def main():
+    with Server() as server:
+        server.start()
 
-	try:
-	   # Try parsing messages as JSON
-	   data = json.loads(message)
-	   user_input = data.get("text","").strip()
-	except json.JSONDecodeError:
-	  #If not JSON, treat as raw text msg
-	  user_input = message.strip()
+        while True:
+            request = server.receive()
 
-	if not user_input:
-	    return "Error: No valid message received."
+            if request is None:
+                break
 
-	print(f"Processing message: {user_input}")
+            response = "Hello there, my name is Aider. I am here to help you with your code!"
+            response += "\nThe message you sent me was: \n\t" + request.content
 
-	# Send input to Aider and get response = coder.chat(user_input)
-
-	aider_response = coder.chat(user_input)
-
-	return aider_response
-
-
-def start_server():
-    host = 'localhost'
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-        server_socket.bind((host, 65234))
-        actual_port = server_socket.getsockname()[1]
-        server_socket.listen()
-
-        print(f"Server listening on {host}:{actual_port}")
-        conn, addr = server_socket.accept()
-        with conn:
-            print(f"Connected on {addr}")
-            while True:
-                data = conn.recv(1024)
-                if not data:
-                    break
-
-                print("Received:", data.decode())
+            server.simulate_reply(response)
 
 if __name__ == "__main__":
-    start_server()
+    main()
