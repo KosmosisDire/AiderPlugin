@@ -1,133 +1,143 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
-
-public struct AiderConfig
-{
-    public string pythonCmd;
-    public string aiderCmd;
-    public string aiderArgs;
-    public string aiderBridgePath;
-    public string modelName;
-    public string providerName;
-    public string apiKey;
-}
+using UnityEngine.UIElements;
 
 public class AiderConfigManager : EditorWindow
 {
-    private AiderConfig config;
+    private AiderYamlOptions yamlOptions;
     private string[] models;
     private string yamlConfig;
+    private Dictionary<string, string> yamlData;
+    private string configFilePath =  Path.Combine(Application.dataPath, "../.aider.conf.yml");
+    private struct AiderYamlOptions
+    {
+        public string model;
+        public string provider;
+        public string apiKey;
+        public string setEnv;
+        public string file;
+        public string read;
+        public string reasoningEffort;
+        public int? maxChatHistoryTokens;
+        public bool? verifySSL;
+        public bool? showModelWarnings;
+        public bool? cachePrompts;
+        public bool? restoreChatHistory;
+        public bool? stream;
+        public bool? git;
+        public bool? autoCommits;
+        public bool? dirtyCommits;
+        public bool? verbose;
+        public bool? suggestShellCommands;
+
+    }
 
     [MenuItem("Aider/Config")]
     public static void ShowWindow()
     {
-        GetWindow<AiderConfigManager>("Aider Config");
+        var window = GetWindow<AiderConfigManager>();
+        window.titleContent = new GUIContent("Aider Config");
+
     }
 
     private void OnEnable()
     {
-        config = LoadConfig();
+        yamlOptions = LoadYamlOptions();
         models = File.ReadAllLines("Assets/Backend/models.txt");
+        CreateUI();
     }
 
-    private void OnGUI()
+    private void CreateUI()
     {
-        GUILayout.Label("Aider Config", EditorStyles.boldLabel);
-        GUILayout.Space(20);
-
-        GUILayout.Label("Development Settings", EditorStyles.boldLabel);
-
-        EditorGUILayout.HelpBox("This should be the base command to run python on your system (eg. 'python')", MessageType.Info);
-        config.pythonCmd = EditorGUILayout.TextField("Python Command", config.pythonCmd);
-
-        EditorGUILayout.HelpBox("This should be the command to run aider on your system (eg. 'aider')", MessageType.Info);
-        config.aiderCmd = EditorGUILayout.TextField("Aider Command", config.aiderCmd);
-
-        EditorGUILayout.HelpBox("These are any extra arguments to pass to aider when running it.", MessageType.Info);
-        config.aiderArgs = EditorGUILayout.TextField("Aider Arguments", config.aiderArgs);
-
-        EditorGUILayout.HelpBox("This should be the path to the aider-bridge.py file relative to the asset directory.", MessageType.Info);
-        config.aiderBridgePath = EditorGUILayout.TextField("Aider Bridge Path", config.aiderBridgePath);
-
-        GUILayout.Space(20);
+        rootVisualElement.Clear();
         
-        GUILayout.Label("Model Settings", EditorStyles.boldLabel);
+        var titleLabel = new Label("Aider Config") { style = { unityFontStyleAndWeight = FontStyle.Bold } };
+        rootVisualElement.Add(titleLabel);
+
+        var modelField = new TextField("Model Name") { value = yamlOptions.model };
+        var providerField = new TextField("Provider Name") { value = GetProviderName(yamlOptions.model), isReadOnly = true };
+
+        modelField.RegisterValueChangedCallback(evt => { yamlOptions.model= evt.newValue; providerField.value= GetProviderName(evt.newValue); });
+        rootVisualElement.Add(modelField);
+
+        if (models.Length > 0)
+        {
+            var modelDropdown = new PopupField<string>("Common Models", new List<string>(models), 0);
+            modelDropdown.RegisterValueChangedCallback(evt => { yamlOptions.model= evt.newValue; modelField.value = evt.newValue;});
+            rootVisualElement.Add(modelDropdown);
+        }
+
+        rootVisualElement.Add(providerField);
+
+        var apiKeyField = new TextField("API Key") { value = yamlOptions.apiKey};
+        apiKeyField.RegisterValueChangedCallback(evt => yamlOptions.apiKey = evt.newValue);
+        rootVisualElement.Add(apiKeyField);
         
-        EditorGUILayout.HelpBox("Use `aider --list-models/` to see all model names.", MessageType.Info);
-        EditorGUILayout.BeginHorizontal();
-        config.modelName = EditorGUILayout.TextField("Model Name", config.modelName);
-        // button to list a dropdown of common available models
-        if (GUILayout.Button("Common Models"))
-        {
-            GenericMenu menu = new GenericMenu();
-            foreach (string model in models)
-            {
-                menu.AddItem(new GUIContent(model), false, () => { config.modelName = model; });
-            }
-
-            menu.ShowAsContext();
-        }
-        EditorGUILayout.EndHorizontal();
-
-        config.providerName = config.modelName.Split("/")[0] ?? "unknown";
-        EditorGUI.BeginDisabledGroup(true);
-        config.providerName = EditorGUILayout.TextField("Provider Name", config.providerName);
-        EditorGUI.EndDisabledGroup();
-        config.apiKey = EditorGUILayout.TextField("API Key", config.apiKey);
-
-        GUILayout.Space(40);
-
-        if (GUILayout.Button("Save"))
-        {
-            SaveConfig();
-            Close();
-        }
+        var saveButton = new Button(() => SaveConfig()) { text = "Save" };
+        rootVisualElement.Add(saveButton);
     }
+
+    private string GetProviderName(string modelName)
+    {
+        return modelName.Contains('/') ? modelName.Split('/')[0] : "";
+    }
+    private Dictionary<string, string> parseYamlConfig()
+    { 
+        string yamlContent = File.ReadAllText(configFilePath);
+
+        Regex regex = new Regex(@"(.+):\s*(.+)");
+        Dictionary<string, string> configData = new Dictionary<string, string>();
+        
+        foreach (Match match in regex.Matches(yamlContent))
+        {
+            configData.Add(match.Groups[1].Value, match.Groups[2].Value);
+        }
+        return configData;
+    }
+
     private string createYamlConfig()
     {
-        yamlConfig = $"######################################## \n" +
-                            $"# Auto-Generated by Aider Unity Plugin #\n" +
-                            $"######################################## \n" +
-                            $"model: {config.modelName} \n";
-        if (config.apiKey != "")
-            yamlConfig += $"api-key:\n {config.providerName} = {config.apiKey} \n"; 
+        yamlConfig = $"########################################\n" +
+                     $"# Auto-Generated by Aider Unity Plugin #\n" +
+                     $"########################################\n";
+        foreach (KeyValuePair<string, string> option in yamlData)
+        {
+            yamlConfig += $"{option.Key}: {option.Value}\n";
+        }
+
         return yamlConfig; 
     } 
 
-    
-
     private void SaveConfig()
     {
-        EditorPrefs.SetString("aider-pythonCmd", config.pythonCmd);
-        EditorPrefs.SetString("aider-aiderCmd", config.aiderCmd);
-        EditorPrefs.SetString("aider-aiderArgs", config.aiderArgs);
-        EditorPrefs.SetString("aider-bridgePath", config.aiderBridgePath);
-        EditorPrefs.SetString("aider-modelName", config.modelName);
-        EditorPrefs.SetString("aider-providerName", config.providerName);
-        EditorPrefs.SetString("aider-apiKey", config.apiKey);
-        File.WriteAllText(Path.Combine(Application.dataPath, "../.aider.conf.yml"), createYamlConfig());
+        if  (yamlOptions.model != "")
+        {
+        yamlData["model"] = yamlOptions.model;
+        }
+        if  (yamlOptions.apiKey != "")
+        {
+        yamlData["api-key"] = $"{GetProviderName(yamlOptions.model)} = {yamlOptions.apiKey}";
+        }
+        File.WriteAllText(configFilePath, createYamlConfig());
+
+        Close();
     }
 
-
-    public static AiderConfig LoadConfig()
+    private AiderYamlOptions LoadYamlOptions()
     {
-        var config = new AiderConfig
+        yamlData = parseYamlConfig(); 
+        var yamlConfig = new AiderYamlOptions
         {
-            pythonCmd = EditorPrefs.GetString("aider-pythonCmd"),
-            aiderCmd = EditorPrefs.GetString("aider-aiderCmd"),
-            aiderArgs = EditorPrefs.GetString("aider-aiderArgs"),
-            aiderBridgePath = EditorPrefs.GetString("aider-bridgePath"),
-            modelName = EditorPrefs.GetString("aider-modelName"),
-            providerName = EditorPrefs.GetString("aider-providerName"),
-            apiKey = EditorPrefs.GetString("aider-apiKey")
+            model = yamlData.GetValueOrDefault("model", ""),
+            apiKey = !string.IsNullOrEmpty(yamlData.GetValueOrDefault("api-key", "")) && yamlData["api-key"].Contains("=") 
+                ? yamlData["api-key"].Split("=")[1].Trim() 
+                : yamlData.GetValueOrDefault("api-key", ""),
+            provider = GetProviderName(yamlData.GetValueOrDefault("model", "")),
         };
 
-        if (string.IsNullOrEmpty(config.pythonCmd)) config.pythonCmd = "python";
-        if (string.IsNullOrEmpty(config.aiderCmd)) config.aiderCmd = "aider";
-        if (string.IsNullOrEmpty(config.aiderCmd)) config.aiderBridgePath = "Backend/aider-bridge.py";
-
-        return config;
+        return yamlConfig;
     }
 }
