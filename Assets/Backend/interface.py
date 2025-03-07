@@ -1,6 +1,5 @@
 from enum import IntEnum
 import struct
-from typing import Dict, Optional
 
 class AiderCommand(IntEnum):
     NONE = -1

@@ -1,21 +1,22 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using UnityEditor;
-using UnityEditor.VersionControl;
+using Debug = UnityEngine.Debug;
 
 [InitializeOnLoad]
 public class AiderRunner
 {
     static Process aiderBridge;
     static Process aider;
-    static Process RunPython(string pythonScriptPath = "Backend/interface.py")
+    static Process RunPython(string pythonScriptPath)
     {
+        var path = Path.Combine(Environment.CurrentDirectory, "Assets", pythonScriptPath);
+        Debug.Log($"Running python script at {path}");
         // assumes python is available on the path (this may be a fine assumption to make?)
         Process pythonProcess = new()
         {
-            StartInfo = new ProcessStartInfo("python", Path.Combine(Environment.CurrentDirectory, "Assets", pythonScriptPath))
+            StartInfo = new ProcessStartInfo("python", path)
             {
                 UseShellExecute = true,
                 CreateNoWindow = false,
@@ -29,7 +30,7 @@ public class AiderRunner
     [MenuItem("Aider/Run Aider Bridge")]
     public static Process RunAiderBridge()
     {
-        aiderBridge = RunPython("Backend/aider_bridge.py");
+        aiderBridge = RunPython("Backend/aider-bridge.py");
         return aiderBridge;
     }
 
@@ -45,7 +46,6 @@ public class AiderRunner
     [MenuItem("Aider/Run Aider")]
     public static Process RunAider()
     {
-//        Environment.SetEnvironmentVariable($"{config.providerName.ToUpper().Replace(" ", "_")}_API_KEY", config.apiKey);
         Process aiderProcess = new()
         {
             StartInfo = new ProcessStartInfo("aider")
