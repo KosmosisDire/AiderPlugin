@@ -249,6 +249,7 @@ def send_message_get_output(message):
     """
 
     global coder
+    coder.init_before_message()
     message = coder.preproc_user_input(message)
     coder.reflected_message = None
     yield from coder.send_message(message)
