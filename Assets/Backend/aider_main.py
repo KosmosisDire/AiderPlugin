@@ -237,7 +237,7 @@ def init(argv=None, force_git_root=None, dry_run=False):
 
 def send_message_get_output(message):
     """
-    This funcion runs a command and returs the output in async chunks. In order to process these chunks run something like this:
+    This function runs a command and returs the output in async chunks. In order to process these chunks run something like this:
 
     ```python
     for output in send_message_get_output("Hello"):
