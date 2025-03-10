@@ -56,14 +56,14 @@ public class Client : Editor
 
             byte[] data = new byte[1024];
             cts = new();
-            cts.CancelAfter(3000);
+            // cts.CancelAfter(3000);
             int bytes = await stream.ReadAsync(data, 0, data.Length, cts.Token);
 
-            if (cts.Token.IsCancellationRequested)
-            {
-                MainThread.LogError("Timed out waiting for response");
-                break;
-            }
+            // if (cts.Token.IsCancellationRequested)
+            // {
+            //     MainThread.LogError("Timed out waiting for response");
+            //     break;
+            // }
 
             if (bytes == 0)
             {
