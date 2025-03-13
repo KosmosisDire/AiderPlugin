@@ -102,7 +102,7 @@ def guessed_wrong_repo(io, git_root, fnames, git_dname):
 
 coder: Coder = None
 
-def init(argv=None, force_git_root=None, dry_run=False):
+def init(argv=None, force_git_root=None):
     """
     Initialize the coder. Use the send_message_get_output function to send messages to the coder.
     dry_run: If True, the coder will not modify any files only output reply.
@@ -223,7 +223,10 @@ def init(argv=None, force_git_root=None, dry_run=False):
     if args.git and not force_git_root and git is not None:
         right_repo_root = guessed_wrong_repo(io, git_root, fnames, git_dname)
         if right_repo_root:
-            return init(argv, right_repo_root, dry_run)
+            return init(argv, right_repo_root)
+        
+    if (args.dry_run):
+        print("Dry run mode enabled. No files will be modified!")
 
     model = Model(model=args.model)
     coder = Coder.create(
@@ -231,7 +234,7 @@ def init(argv=None, force_git_root=None, dry_run=False):
         edit_format=args.edit_format,
         fnames=fnames, 
         io=io, 
-        dry_run=dry_run, # a dry run will cause it to not modify files
+        dry_run=args.dry_run, # a dry run will cause it to not modify files
         stream=True,
         use_git=True)
 
@@ -255,6 +258,6 @@ def send_message_get_output(message):
     yield from coder.send_message(message)
 
 if __name__ == "__main__":
-    init(dry_run=True)
+    init()
     for out in send_message_get_output("Hello"):
         print("\nTest Output:", out)
