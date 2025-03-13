@@ -1,10 +1,6 @@
-
-
-
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 static class UIExtensions
@@ -92,64 +88,5 @@ static class UIExtensions
         element.style.opacity = 1;
         await Task.Delay((int)(duration * 1000));
         element.pickingMode = PickingMode.Position;
-    }
-
-    public static async void SetTranslation(this VisualElement element, float x, float y, float duration = 0.5f)
-    {
-        element.AddTransition("translate", duration, 0);
-        await Task.Delay(0);
-        element.style.translate = new StyleTranslate(new Translate(x, y));
-        await Task.Delay((int)(duration * 1000));
-    }
-
-    public static async void SetTranslationY(this VisualElement element, float y, float duration = 0.5f)
-    {
-        element.AddTransition("translate", duration, 0);
-        await Task.Delay(0);
-        element.style.translate = new StyleTranslate(new Translate(element.style.translate.value.x.value, y));
-        await Task.Delay((int)(duration * 1000));
-    }
-
-    public static async void SetTranslationX(this VisualElement element, float x, float duration = 0.5f)
-    {
-        element.AddTransition("translate", duration, 0);
-        await Task.Delay(0);
-        element.style.translate = new StyleTranslate(new Translate(x, element.style.translate.value.y.value));
-        await Task.Delay((int)(duration * 1000));
-    }
-
-    public static Vector2 GetTranslation(this VisualElement element)
-    {
-        return new Vector2(element.style.translate.value.x.value, element.style.translate.value.y.value);
-    }
-
-    public static float GetTranslationX(this VisualElement element)
-    {
-        return element.style.translate.value.x.value;
-    }
-
-    public static float GetTranslationY(this VisualElement element)
-    {
-        return element.style.translate.value.y.value;
-    }
-
-    public static float AddTranslationX(this VisualElement element, float x)
-    {
-        var current = element.GetTranslationX();
-        element.SetTranslationX(current + x);
-        return current + x;
-    }
-
-    public static float AddTranslationY(this VisualElement element, float y)
-    {
-        var current = element.GetTranslationY();
-        element.SetTranslationY(current + y);
-        return current + y;
-    }
-
-    public static VisualElement CloneTreeEl(this VisualTreeAsset uxml, VisualElement parent)
-    {
-        uxml.CloneTree(parent, out var firstIndex, out _);
-        return parent[firstIndex];
     }
 }

@@ -1,17 +1,14 @@
 
-
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-
 public class AiderChatWindow : EditorWindow
 {
-    public List<ChatMessage> chatList = new();
     public ScrollView chatContainer;
+    public AiderChatList chatList = new("ChatList");
 
 
     [MenuItem("Aider/Chat Window")]
@@ -31,6 +28,12 @@ public class AiderChatWindow : EditorWindow
         chatContainer = new ScrollView();
         chatContainer.AddToClassList("chat-container");
         root.Add(chatContainer);
+
+        for (int i = 0; i < chatList.Count; i++)
+        {
+            Debug.Log($"Adding chat message {i}");
+            chatList[i].Build(chatContainer);
+        }
 
         var inspectorSkin = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector);
 
@@ -55,8 +58,8 @@ public class AiderChatWindow : EditorWindow
             textField.value = "";
 
             Client.Send(req);
-            chatList.Add( new ChatMessage(chatContainer, req.Content, true, "Command Run: " + req.Command.ToString()));
-            chatList.Add(new ChatMessage(chatContainer, "", false, "Thinking..."));
+            chatList.AddMessage(new AiderChatMessage(chatContainer, req.Content, true, "Command Run: " + req.Command.ToString()));
+            chatList.AddMessage(new AiderChatMessage(chatContainer, "", false, "Thinking..."));
             Client.AsyncReceive(HandleResponse);
         })
         {
@@ -93,6 +96,7 @@ public class AiderChatWindow : EditorWindow
             {
                 Debug.Log("AI response complete");
                 AssetDatabase.Refresh();
+                chatList.SerializeChat();
                 await Task.Delay(1000);
                 AssetDatabase.Refresh();
             }
