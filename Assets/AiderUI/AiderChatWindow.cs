@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -79,7 +80,7 @@ public class AiderChatWindow : EditorWindow
 
     }
 
-    private void HandleResponse(AiderResponse response)
+    private async void HandleResponse(AiderResponse response)
     {
         // modify current ai message
         var current = chatList.Last();
@@ -87,6 +88,14 @@ public class AiderChatWindow : EditorWindow
         {
             Debug.Log($"Add part {response.Part}: {response.Content}");
             current.AppendText(response.Content);
+
+            if (response.Last)
+            {
+                Debug.Log("AI response complete");
+                AssetDatabase.Refresh();
+                await Task.Delay(1000);
+                AssetDatabase.Refresh();
+            }
         }
         else
         {
