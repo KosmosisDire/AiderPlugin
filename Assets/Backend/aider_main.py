@@ -258,6 +258,6 @@ def send_message_get_output(message):
     yield from coder.send_message(message)
 
 if __name__ == "__main__":
-    init(dry_run=True)
+    init()
     for out in send_message_get_output("Hello"):
         print("\nTest Output:", out)
