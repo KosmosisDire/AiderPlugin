@@ -1,0 +1,208 @@
+
+.dark-mode
+{
+    --user-color: rgb(5,5,5);
+    --ai-color:rgb(60,60,60);
+    --user-color-muted: rgba(5,5,5, 0.5);
+    --ai-color-muted: rgba(60,60,60, 0.5);
+    --accent-color: rgb(54, 101, 255);
+    --surface-color: rgb(20, 20, 20);
+    --bright-text-color: rgba(255, 255, 255, 0.95);
+    --background-color: rgb(43, 43, 43);
+}
+
+.light-mode
+{
+    --user-color: rgb(150,150,150);
+    --ai-color:rgb(220,220,220);
+    --user-color-muted: rgba(150,150,150, 0.5);
+    --ai-color-muted: rgba(220,220,220, 0.5);
+    --accent-color: rgb(189, 110, 0);
+    --bright-text-color: rgb(0, 0, 0);
+    --surface-color: rgb(219, 219, 219);
+    --background-color: rgb(255, 255, 255);
+}   
+
+.aider-chat-window
+{
+    background-color: var(--background-color);
+    --send-icon: url("/Assets/Editor/Lucide/arrow-up.png");
+    --settings-icon: url("/Assets/Editor/Lucide/settings.png");
+    --copy-icon: url("/Assets/Editor/Lucide/copy.png");
+    --check-icon: url("/Assets/Editor/Lucide/circle-check.png");
+}
+
+.placeholder .unity-text-element
+{
+    opacity: 0.5;
+}
+
+.chat-input #unity-text-input
+{
+    background-color:rgba(0, 0, 0, 0);
+    border-color:rgba(0, 0, 0, 0);
+    white-space: pre-wrap;
+    max-height: 100px;
+    overflow: scroll;
+    height: 100%;
+}
+
+.chat-input .unity-text-element
+{
+}
+
+.chat-input
+{
+    flex-shrink: 1;
+    flex-grow: 1;
+    margin-right: 10px;
+    height: 100%;
+    font-size: 14px;
+}
+
+.footer
+{
+    flex-direction: row;
+    padding: 10px;
+    padding-bottom: 0px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    background-color: var(--surface-color);
+}
+
+.chat-container
+{
+    flex-grow: 1;
+    flex-direction: column;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;    
+}
+
+.message-container
+{
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    border-width: 1px;
+    font-size: 14px;
+    min-width: 200px;
+}
+
+.message-container.is-ai
+{
+    background-color: var(--ai-color-muted);
+    margin-right: 60px;
+    color: var(--bright-text-color);
+}
+
+.message-container.is-user
+{
+    background-color: var(--user-color-muted);
+    margin-left: 60px;
+}
+
+.message-container #unity-text-input
+{
+    background-color:rgba(0, 0, 0, 0);
+    border-color:rgba(0, 0, 0, 0);
+    white-space: pre-wrap;
+}
+
+.message-container #unity-text-input .unity-text-element
+{
+    width: 100%;
+}
+
+.unity-button
+{
+    -unity-background-image-tint-color: var(--bright-text-color);
+    scale: 1;
+    border-radius: 10px;
+    border-color: transparent;
+    transition: scale 0.2s;
+    margin: 0;
+}
+
+.unity-button:hover
+{
+    scale: 1.1;
+}
+
+.unity-button:active
+{
+    scale: 0.9;
+}
+
+.send-button
+{
+    width: 35px;
+    height: 35px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+    background-image: var(--send-icon);
+    background-color: var(--accent-color);
+    background-size: 70%;
+}
+
+.settings-button
+{
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 40px;
+    height: 40px;
+    background-image: var(--settings-icon);
+    background-color: var(--surface-color);
+    background-size: 50%;
+}
+
+.hide
+{
+    display: none;
+}
+
+.config-window
+{
+    position: absolute;
+    top: 55px;
+    left: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    max-width: 70%;
+    background-color: var(--surface-color);
+}
+
+.config-window .unity-base-field
+{
+    margin-bottom: 5px;
+}
+
+.save-button
+{
+    margin-top: 15px;
+    width: 200px;
+    max-width: 80%;
+    align-self: center;
+}
+
+.copy-button
+{
+    position: absolute;
+    right: -10px;
+    bottom: -10px;
+    width: 25px;
+    height: 25px;
+    background-image: var(--copy-icon);
+    background-color: var(--surface-color);
+    background-size: 50%;
+    transition: background-color 0.2s;
+}
+
+.copy-button.confirm
+{
+    background-image: var(--check-icon);
+    background-color: var(--accent-color);
+    background-size: 65%;
+}
