@@ -7,7 +7,9 @@
     --ai-color-muted: rgba(60,60,60, 0.5);
     --accent-color: rgb(54, 101, 255);
     --surface-color: rgb(20, 20, 20);
+    --surface-color-muted: rgba(20, 20, 20, 0.5);
     --bright-text-color: rgba(255, 255, 255, 0.95);
+    --muted-text-color: rgba(255, 255, 255, 0.2);
     --background-color: rgb(43, 43, 43);
 }
 
@@ -18,8 +20,10 @@
     --user-color-muted: rgba(150,150,150, 0.5);
     --ai-color-muted: rgba(220,220,220, 0.5);
     --accent-color: rgb(189, 110, 0);
-    --bright-text-color: rgb(0, 0, 0);
     --surface-color: rgb(219, 219, 219);
+    --surface-color-muted: rgba(219, 219, 219, 0.5);
+    --bright-text-color: rgb(0, 0, 0);
+    --muted-text-color: rgba(0, 0, 0, 0.2);
     --background-color: rgb(255, 255, 255);
 }   
 
@@ -207,4 +211,77 @@
     background-image: var(--check-icon);
     background-color: var(--accent-color);
     background-size: 65%;
+}
+
+.table
+{
+    flex-direction: column;
+    overflow: scroll;
+    margin-bottom: 15px;
+    margin-top: 15px;
+}
+
+.table-content
+{
+    flex-direction: row;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: var(--surface-color);
+    width: 100%;
+}
+
+.table-column
+{
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.table-column.middle, .table-column.first
+{
+    border-right-width: 1px;
+    border-right-color: var(--muted-text-color);
+}
+
+.table-cell
+{
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 5px;
+}
+
+.table-cell.middle, .table-cell.first
+{
+    border-bottom-width: 1px;
+    border-bottom-color: var(--muted-text-color);
+}
+
+.table-cell.empty
+{
+    color: transparent;
+}
+
+.code-block
+{
+    background-color: var(--surface-color);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 15px;
+    margin-top: 15px;
+    font-size: 14px;
+    -unity-font: url("JetBrainsMono.ttf");
+    -unity-font-definition: url("JetBrainsMono.asset");
+}
+
+.blockquote
+{
+    background-color: var(--surface-color-muted);
+    border-radius: 5px;
+    padding: 5px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    font-size: 14px;
+    border-left-width: 3px;
+    border-left-color: var(--accent-color);
 }

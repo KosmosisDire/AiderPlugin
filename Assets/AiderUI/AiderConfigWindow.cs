@@ -21,7 +21,7 @@ public class AiderConfigWindow
         ["openai/gpt-4o"] = "GPT-4o",
         ["openai/gpt-4-turbo"] = "GPT-4 Turbo",
         ["openai/gpt-3.5-turbo"] = "GPT-3.5 Turbo",
-        ["openai/o1"] = "O1",
+        ["openai/o1"] = "O1", 
         ["openai/o1-mini"] = "O1 Mini",
         ["openai/o3-mini"] = "O3 Mini",
         ["anthropic/claude-3-5-sonnet-20241022"] = "Claude 3.5 Sonnet",

@@ -54,17 +54,18 @@ class Server:
 def main():
     aider_main.init()
     with Server() as server:
-        server.start()
+        while True: # continue to listen for new connections
+            server.start()
 
-        while True:
-            request = server.receive()
+            while True: # continue to listen for new messages
+                request = server.receive()
 
-            if request is None:
-                break
+                if request is None:
+                    break
 
-            for output in aider_main.send_message_get_output(request.content):
-                server.send(AiderResponse(output, 0, False))
-            server.send(AiderResponse("", 0, True))
+                for output in aider_main.send_message_get_output(request.content):
+                    server.send(AiderResponse(output, 0, False))
+                server.send(AiderResponse("", 0, True))
 
 if __name__ == "__main__":
     main()
