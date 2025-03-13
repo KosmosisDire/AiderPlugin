@@ -1,6 +1,7 @@
 import random
 import socket
 import time
+import aider_main
 from interface import AiderRequest, AiderResponse
 
 class Server:
@@ -51,6 +52,7 @@ class Server:
 
 
 def main():
+    aider_main.init()
     with Server() as server:
         server.start()
 
@@ -60,10 +62,9 @@ def main():
             if request is None:
                 break
 
-            response = "Hello there, my name is Aider. I am here to help you with your code!"
-            response += "\nThe message you sent me was: \n\t" + request.content
-
-            server.simulate_reply(response)
+            for output in aider_main.send_message_get_output(request.content):
+                server.send(AiderResponse(output, 0, False))
+            server.send(AiderResponse("", 0, True))
 
 if __name__ == "__main__":
     main()
