@@ -6,6 +6,9 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.Diagnostics; //added for process management
+using System.IO;//added for file path operation
+
 
 public class ChatEntry
 {
@@ -24,11 +27,86 @@ public class AiderWindow : EditorWindow
     static Color aiColor = new Color(0.8f, 0.5f, 1.0f);
 
 
+    private Process aiderBridgeProcess; // Added to store process
+
+
     [MenuItem("Aider/Chat Window")]
     public static void ShowWindow()
     {
         GetWindow<AiderWindow>("Aider");
     }
+
+
+
+    private void OnEnable()
+    {
+        StartAiderBridge(); // Start the bridge when the window is enabled
+    }
+
+    private void OnDisable()
+    {
+        StopAiderBridge(); // Stop the bridge when the window is disabled
+    }
+
+    private void StartAiderBridge()
+    {
+        if (aiderBridgeProcess != null && !aiderBridgeProcess.HasExited)
+        {
+            return; // Bridge is already running
+        }
+
+        string scriptPath = Path.Combine(Application.dataPath, "Backend/aider-bridge.py"); // Adjust the path as needed
+        if (!File.Exists(scriptPath))
+        {
+            UnityEngine.Debug.LogError("AiderBridge.py not found at: " + scriptPath);
+            return;
+        }
+
+        aiderBridgeProcess = new Process();
+        aiderBridgeProcess.StartInfo.FileName = "python"; // Or "python3"
+        aiderBridgeProcess.StartInfo.Arguments = scriptPath;
+        aiderBridgeProcess.StartInfo.UseShellExecute = false;
+        aiderBridgeProcess.StartInfo.RedirectStandardOutput = true;
+        aiderBridgeProcess.StartInfo.RedirectStandardError = true;
+        aiderBridgeProcess.StartInfo.CreateNoWindow = true; // Run in background
+
+        aiderBridgeProcess.OutputDataReceived += (sender, e) =>
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+            {
+                UnityEngine.Debug.Log("Aider Bridge Output: " + e.Data);
+            }
+        };
+
+        aiderBridgeProcess.ErrorDataReceived += (sender, e) =>
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+            {
+                UnityEngine.Debug.LogError("Aider Bridge Error: " + e.Data);
+            }
+        };
+
+        aiderBridgeProcess.Start();
+        aiderBridgeProcess.BeginOutputReadLine();
+        aiderBridgeProcess.BeginErrorReadLine();
+
+        UnityEngine.Debug.Log("Aider Bridge started.");
+
+        // make sure the bridge is running before connecting.
+        System.Threading.Thread.Sleep(500); // Adjust as needed.
+        Client.ConnectToBridge(); // connect to bridge.
+    }
+
+    private void StopAiderBridge()
+    {
+        if (aiderBridgeProcess != null && !aiderBridgeProcess.HasExited)
+        {
+            aiderBridgeProcess.Kill();
+            aiderBridgeProcess.WaitForExit();
+            UnityEngine.Debug.Log("Aider Bridge stopped.");
+        }
+    }
+
 
     void UpdateMessage(ChatEntry chat, VisualElement parent)
     {
@@ -106,7 +184,7 @@ public class AiderWindow : EditorWindow
 
         Button button = new Button(() =>
         {
-            Debug.Log($"Sending: {textField.value}");
+            UnityEngine.Debug.Log($"Sending: {textField.value}");
             var req = new AiderRequest(textField.value);
             textField.value = "";
 
@@ -127,13 +205,13 @@ public class AiderWindow : EditorWindow
         var current = chat.Last();
         if (!current.isUser)
         {
-            Debug.Log($"Add part {response.Part}: {response.Content}");
+            UnityEngine.Debug.Log($"Add part {response.Part}: {response.Content}");
             current.message += response.Content;
             UpdateMessage(current, messageContainer);
         }
         else
         {
-            Debug.LogError("Expected AI response, but got user response");
+            UnityEngine.Debug.LogError("Expected AI response, but got user response");
         }
     }
 }

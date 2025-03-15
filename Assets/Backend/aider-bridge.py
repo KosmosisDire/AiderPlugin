@@ -51,7 +51,7 @@ class Server:
 
 
 def main():
-    with Server() as server:
+     with Server() as server:
         server.start()
 
         while True:
