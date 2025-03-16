@@ -1,5 +1,3 @@
-
-
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
@@ -15,7 +13,7 @@ public class ChatEntry
     public string message;
     public bool isUser;
     public string placeholder; // show placeholder is the message in null or whitespace
-    public Label label; 
+    public Label label;
 }
 
 public class AiderWindow : EditorWindow
@@ -94,6 +92,16 @@ public class AiderWindow : EditorWindow
 
         // make sure the bridge is running before connecting.
         System.Threading.Thread.Sleep(500); // Adjust as needed.
+
+
+        if (aiderBridgeProcess == null || aiderBridgeProcess.HasExited)//check if the Aider Bridge process is running after attempting to start it
+        {
+            UnityEngine.Debug.LogError("Aider Bridge process is not running after start. Restarting.");
+            StopAiderBridge();
+            StartAiderBridge();
+            System.Threading.Thread.Sleep(500);
+        }
+
         Client.ConnectToBridge(); // connect to bridge.
     }
 
