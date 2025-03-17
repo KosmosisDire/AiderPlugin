@@ -42,7 +42,6 @@ public class AiderRunner
         return pythonProcess;
     }
 
-    // Start the Aider Bridge
     [MenuItem("Aider/Run Aider Bridge")]
     public static Process RunAiderBridge()
     {
@@ -77,7 +76,18 @@ public class AiderRunner
         return aiderProcess;
     }
 
-    // Kill Aider process
+    [MenuItem("Aider/Update Models List")]
+    public static void UpdateModelsList()
+    {
+        if (aiderBridge == null || aiderBridge.HasExited)
+        {
+            Debug.LogError("Aider Bridge is not running");
+            return;
+        }
+
+        RunPython("Backend/update-models.py");
+    }
+
     [MenuItem("Aider/Kill Aider")]
     public static void KillAider()
     {
