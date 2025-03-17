@@ -151,12 +151,12 @@ public static class MarkdownParser
     public static void Parse(VisualElement parent, string markdown)
     {
         parent.Clear();
+        var codeSelector = new Regex(@"```.*?\n([\s\S]+?)```", RegexOptions.Multiline);
         var tableSelector = new Regex(@"(\|.+\|\s+)+", RegexOptions.Multiline);
-        var codeSelector = new Regex(@"```[\s\S]+?```", RegexOptions.Multiline);
         var blockQuoteSelector = new Regex(@"^([ \t]*?)> (.+)", RegexOptions.Multiline);
 
-        var tableBlocks = tableSelector.Matches(markdown).Select(match => new int2(match.Index, match.Index + match.Length)).ToList();
         var codeBlocks = codeSelector.Matches(markdown).Select(match => new int2(match.Index, match.Index + match.Length)).ToList();
+        var tableBlocks = tableSelector.Matches(markdown).Select(match => new int2(match.Index, match.Index + match.Length)).ToList();
         var blockQuotes = blockQuoteSelector.Matches(markdown).Select(match => new int2(match.Index, match.Index + match.Length)).ToList();
 
         var allIndices = new List<int2>();

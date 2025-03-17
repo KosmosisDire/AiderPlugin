@@ -1,8 +1,9 @@
+import os
 import random
 import socket
 import time
 import aider_main
-from interface import AiderRequest, AiderResponse
+from interface import AiderCommand, AiderRequest, AiderResponse
 
 class Server:
     def __init__(self):
@@ -25,14 +26,20 @@ class Server:
     def send(self, message: AiderResponse):
         self.conn.sendall(message.serialize())
 
+    def send_string(self, string: str):
+        self.send(AiderResponse(string, True))
+
+    def send_error(self, string: str):
+        self.send(AiderResponse(string, True, True))
+
     def simulate_reply(self, string: str):
         words = string.split(" ")
         for i, word in enumerate(words):
             if i < len(words) - 1:
-                self.send(AiderResponse(word + " ", i, False))
+                self.send(AiderResponse(word + " "))
                 time.sleep(random.uniform(0.01, 0.2))
             else:
-                self.send(AiderResponse(word, i, True))
+                self.send(AiderResponse(word, True))
 
     def receive(self):
         data = self.conn.recv(1024)
@@ -50,7 +57,6 @@ class Server:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-
 def main():
     aider_main.init()
     with Server() as server:
@@ -63,9 +69,60 @@ def main():
                 if request is None:
                     break
 
+                command = request.get_command()
+                command_name = request.get_command_string()
+                print(f"Received command: {command_name}")
+
+                coder = aider_main.coder
+
+                match command:
+                    case AiderCommand.UNKNOWN:
+                        server.send_error(f"The command {command_name} is not recognized.")
+                        continue
+                    case AiderCommand.LS:
+                        server.send_string("\n".join(coder.abs_fnames))
+                        continue
+                    case AiderCommand.ADD:
+                        name = coder.get_rel_fname(request.strip_command())
+                        if os.path.exists(name):
+                            coder.add_rel_fname(name) 
+                            server.send_string(f"Added {name}")
+                        else:
+
+                            # check if there is only one file in all files that ends with filename
+                            # because the user may have just but the name of the file not the path
+                            filename = name.replace("\\", "/").split("/")[-1]
+                            matches = [fname for fname in coder.get_all_relative_files() if fname.endswith(f"{filename}")]
+                            if len(matches) == 1:
+                                coder.add_rel_fname(matches[0])
+                                server.send_string(f"Added {matches[0]} implicitly.")
+                            else:
+                                server.send_error(f"Cannot add {name} because it does not exist.")
+
+                        continue
+                    case AiderCommand.DROP:
+                        name = coder.get_rel_fname(request.strip_command())
+                        if name in coder.get_inchat_relative_files():
+                            coder.drop_rel_fname(name) 
+                            server.send_string(f"Dropped {name}")
+                        else:
+                            
+                            # do the same for drop as we did for add
+                            filename = name.replace("\\", "/").split("/")[-1]
+                            matches = [fname for fname in coder.get_inchat_relative_files() if fname.endswith(f"{filename}")]
+                            if len(matches) == 1:
+                                coder.drop_rel_fname(matches[0])
+                                server.send_string(f"Dropped {matches[0]} implicitly.")
+                            else:
+                                server.send_error(f"Cannot drop {name} because it is not in chat.")
+
+                        continue
+                
+
                 for output in aider_main.send_message_get_output(request.content):
-                    server.send(AiderResponse(output, 0, False))
-                server.send(AiderResponse("", 0, True))
+                    server.send(AiderResponse(output))
+
+                server.send(AiderResponse("", True))
 
 if __name__ == "__main__":
     main()

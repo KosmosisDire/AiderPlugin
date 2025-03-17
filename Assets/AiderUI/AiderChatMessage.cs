@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 using Serializable = System.SerializableAttribute;
 
 [Serializable]
-public class AiderChatMessage
+public class AiderChatMessage : VisualElement
 {
     [SerializeField]
     private string _message;
@@ -17,9 +17,7 @@ public class AiderChatMessage
     public bool isUser;
 
     public readonly string placeholder; // show placeholder if the message in null or whitespace
-    public TextField label; 
-    public VisualElement parent;
-    public VisualElement container;
+    public TextField label;
     public Button copyButton;
 
     async void CopyToClipboard(bool showConfirm = true)
@@ -33,38 +31,27 @@ public class AiderChatMessage
         }
     }
 
-    public AiderChatMessage(VisualElement parent, string message, bool isUser, string placeholder)
+    public AiderChatMessage(string message, bool isUser, string placeholder)
     {
-        this.parent = parent;
+        AddToClassList("message-container");
+        AddToClassList(isUser ? "is-user" : "is-ai");
         this.Message = message;
         this.isUser = isUser;
         this.placeholder = placeholder;
-
-        Build(parent);
-    }
-
-    public void Build(VisualElement parent)
-    {
-        this.parent = parent;
-        this.container = new VisualElement();
-        container.AddToClassList("message-container");
-        container.AddToClassList(isUser ? "is-user" : "is-ai");
-        parent.Add(container);
 
         Reparse();
     }
 
     public void Reparse()
     {
-        this.container.Clear();
-        Debug.Log($"Reparse: {this.Message}");
-        MarkdownParser.Parse(container, this.Message);
+        this.Clear();
+        MarkdownParser.Parse(this, this.Message);
 
         if (!isUser)
         {
             this.copyButton = new Button(() => CopyToClipboard());
             this.copyButton.AddToClassList("copy-button");
-            container.Add(copyButton);
+            this.Add(copyButton);
         }
     }
 
@@ -84,11 +71,5 @@ public class AiderChatMessage
     {
         this.Message += message;
         Reparse();
-    }
-
-    public void SetParent(VisualElement parent)
-    {
-        this.parent = parent;
-        parent.Add(container);
     }
 }

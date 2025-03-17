@@ -7,9 +7,8 @@ using UnityEngine.UIElements;
 
 public class AiderChatWindow : EditorWindow
 {
-    public ScrollView chatContainer;
-    public AiderChatList chatList = new("ChatList");
-
+    public AiderChatList chatList;
+    public AiderContextList contextList;
 
     [MenuItem("Aider/Chat Window")]
     public static void ShowWindow()
@@ -24,16 +23,8 @@ public class AiderChatWindow : EditorWindow
         root.AddToClassList(EditorGUIUtility.isProSkin ? "dark-mode" : "light-mode");
         root.AddToClassList("aider-chat-window");
 
-
-        chatContainer = new ScrollView();
-        chatContainer.AddToClassList("chat-container");
-        root.Add(chatContainer);
-
-        for (int i = 0; i < chatList.Count; i++)
-        {
-            Debug.Log($"Adding chat message {i}");
-            chatList[i].Build(chatContainer);
-        }
+        chatList = new AiderChatList("ChatList");
+        root.Add(chatList);
 
         var inspectorSkin = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector);
 
@@ -42,6 +33,10 @@ public class AiderChatWindow : EditorWindow
         footer.AddToClassList("footer");
         root.Add(footer);
 
+        VisualElement inputWrapper = new();
+        inputWrapper.AddToClassList("input-wrapper");
+        footer.Add(inputWrapper);
+
         // make chat input
         TextField textField = new()
         {
@@ -49,7 +44,7 @@ public class AiderChatWindow : EditorWindow
         };
         textField.AddToClassList("chat-input");
         textField.SetPlaceholderText("How can I help you?");
-        footer.Add(textField);
+        inputWrapper.Add(textField);
 
         Button button = new Button(() =>
         {
@@ -58,8 +53,8 @@ public class AiderChatWindow : EditorWindow
             textField.value = "";
 
             Client.Send(req);
-            chatList.AddMessage(new AiderChatMessage(chatContainer, req.Content, true, "Command Run: " + req.Command.ToString()));
-            chatList.AddMessage(new AiderChatMessage(chatContainer, "", false, "Thinking..."));
+            chatList.AddMessage(req.Content, true, "Empty Message");
+            chatList.AddMessage("", false, "Thinking...");
             Client.AsyncReceive(HandleResponse);
         })
         {
@@ -68,8 +63,14 @@ public class AiderChatWindow : EditorWindow
                 scale = new StyleScale(StyleKeyword.Null),
             }
         };
+
         button.AddToClassList("send-button");
-        footer.Add(button);
+        inputWrapper.Add(button);
+
+        // make context list
+        contextList = new AiderContextList();
+        contextList.Update(Client.GetContextList());
+        footer.Add(contextList);
 
         var config = new AiderConfigWindow(root);
 
@@ -83,22 +84,34 @@ public class AiderChatWindow : EditorWindow
 
     }
 
-    private async void HandleResponse(AiderResponse response)
+    private async void HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
     {
-        // modify current ai message
+        Debug.Log("Response end");
+        // reload assets in case a file was changed
+        AssetDatabase.Refresh();
+
+        // save chat to a file
+        chatList.SerializeChat();
+
+        var context = Client.GetContextList();
+        Debug.Log(context);
+        contextList.Update(context);
+
+        // after a delay reload again in case writing the file took some time
+        await Task.Delay(1000);
+        AssetDatabase.Refresh();
+    }
+
+    private void HandleResponse(AiderResponse response)
+    {
         var current = chatList.Last();
         if (!current.isUser)
         {
-            Debug.Log($"Add part {response.Part}: {response.Content}");
             current.AppendText(response.Content);
 
             if (response.Last)
             {
-                Debug.Log("AI response complete");
-                AssetDatabase.Refresh();
-                chatList.SerializeChat();
-                await Task.Delay(1000);
-                AssetDatabase.Refresh();
+                HandleResponseEnd(response, current);
             }
         }
         else
