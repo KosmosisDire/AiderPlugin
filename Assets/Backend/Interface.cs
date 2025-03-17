@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.RegularExpressions;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public enum AiderCommand
@@ -51,12 +53,17 @@ public static class AiderCommandHelper
                 { AiderCommand.Web, "Scrape a webpage, convert to markdown and send in a message" }
             });
 
-    public static string GetCommandString(AiderCommand command)
+    static string[] SplitCamelCase(this string source)
     {
-        return $"/{command.ToString().ToLower()}";
+        return Regex.Split(source, @"(?<!^)(?=[A-Z])");
     }
 
-    public static string GetCommandDescription(AiderCommand command)
+    public static string GetCommandString(this AiderCommand command)
+    {
+        return string.Join("-", command.ToString().SplitCamelCase()).ToLower();
+    }
+
+    public static string GetCommandDescription(this AiderCommand command)
     {
         return CommandDescriptions[command];
     }
@@ -82,33 +89,28 @@ public static class AiderCommandHelper
 
 public struct AiderRequest
 {
-    public AiderCommand Command { get; set; }
     public string Content { get; set; }
 
     public AiderRequest(AiderCommand command, string content)
     {
-        Command = command;
-        Content = content;
+        if (command == AiderCommand.None)
+        {
+            Content = content;
+            return;
+        }
+
+        Content = $"/{command.GetCommandString()} {content}";
     }
 
-    public AiderRequest(string fullText)
+    public AiderRequest(string content)
     {
-        Command = AiderCommandHelper.ParseCommand(fullText);
-        if (Command == AiderCommand.None)
-        {
-            Content = fullText;
-        }
-        else
-        {
-            Content = string.Join(" ", fullText.Split(' ').Skip(1));
-        }
+        Content = content;
     }
 
     // see interface.py for the deserialization function
     public readonly byte[] Serialize()
     {
         var byteList = new List<byte>();
-        byteList.AddRange(BitConverter.GetBytes((int)Command));
         byteList.AddRange(BitConverter.GetBytes(Content.Length));
         byteList.AddRange(System.Text.Encoding.UTF8.GetBytes(Content));
         return byteList.ToArray();
@@ -118,23 +120,34 @@ public struct AiderRequest
 public struct AiderResponse
 {
     public string Content { get; set; }
-    public int Part { get; set; }
     public bool Last { get; set; }
+    public bool IsError { get; set; }
 
-    public AiderResponse(string content, int part, bool last)
+    public AiderResponse(string content, bool last, bool isError)
     {
         Content = content;
-        Part = part;
         Last = last;
+        IsError = isError;
+
+        if (isError)
+        {
+            Debug.LogError(content);
+        }
     }
 
     public static AiderResponse Deserialize(byte[] data)
     {
-        var contentLength = BitConverter.ToInt32(data, 0);
-        var content = System.Text.Encoding.UTF8.GetString(data, 4, contentLength);
-        var part = BitConverter.ToInt32(data, 4 + contentLength);
-        var last = BitConverter.ToBoolean(data, 8 + contentLength);
-        return new AiderResponse(content, part, last);
+        int pos = 0;
+        var contentLength = BitConverter.ToInt32(data, pos); pos += 4;
+        var content = System.Text.Encoding.UTF8.GetString(data, pos, contentLength); pos += contentLength;
+        var last = BitConverter.ToBoolean(data, pos); pos += 1;
+        var error = BitConverter.ToBoolean(data, pos);
+        return new AiderResponse(content, last, error);
+    }
+
+    public static AiderResponse Error(string content)
+    {
+        return new AiderResponse(content, true, true);
     }
 }
 

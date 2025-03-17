@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 using Serializable = System.SerializableAttribute;
 
 [Serializable]
-public class AiderChatList : IEnumerable<AiderChatMessage>
+public class AiderChatList : ScrollView, IEnumerable<AiderChatMessage>
 {
     [SerializeField]
     private List<AiderChatMessage> chatList = new();
@@ -14,9 +15,10 @@ public class AiderChatList : IEnumerable<AiderChatMessage>
 
     public AiderChatList(string chatName)
     {
+        AddToClassList("chat-container");
         chatList = new List<AiderChatMessage>();
         this.chatName = chatName;
-        LoadMessages();
+        DeserializeChat();
     }
 
     public void SerializeChat()
@@ -33,22 +35,24 @@ public class AiderChatList : IEnumerable<AiderChatMessage>
         }
 
         var json = System.IO.File.ReadAllText(SavePath);
-        JsonUtility.FromJsonOverwrite(json, this);
+        var temp = JsonUtility.FromJson<AiderChatList>(json);
 
+        for (int i = 0; i < temp.chatList.Count; i++)
+        {
+            var chatTemp = temp.chatList[i];
+            AddMessage(chatTemp.Message, chatTemp.isUser, chatTemp.placeholder);
+        }
     }
 
-    public void AddMessage(AiderChatMessage message)
+    public void AddMessage(string content, bool isUser, string placeholder)
     {
-        chatList.Add(message);
+        var msg = new AiderChatMessage(content, isUser, placeholder);
+        this.Add(msg);
+        chatList.Add(msg);
         SerializeChat();
     }
 
-    public void LoadMessages()
-    {
-        DeserializeChat();
-    }
-
-    public AiderChatMessage this[int index]
+    public new AiderChatMessage this[int index]
     {
         get => chatList[index];
     }
