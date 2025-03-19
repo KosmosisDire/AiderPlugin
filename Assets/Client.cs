@@ -14,25 +14,24 @@ public class Client : Editor
 
     static bool IsConnected => client != null && stream != null && stream.CanWrite;
 
+    //Attempts to establish a tcp connection to aider bridge
     [MenuItem("Aider/Connect to Bridge")]
     public static void ConnectToBridge()
-    //Attempts to establish a tcp connection to aider bridge
     {
         try
         {
+            AiderRunner.EnsureAiderBridgeRunning();
             client = new();
             client.Connect("localhost", 65234);
             stream = client.GetStream();
             Debug.Log("Connected to Aider Bridge.");//logs successful connection
         }
-        
         catch (Exception e)
-         {
-                Debug.LogError("Failed to connect to Aider Bridge: " + e.Message);
-                client = null;//clears client reference for failed connection
-                stream = null;//clears stream reference
-         }
-
+        {
+            Debug.LogError("Failed to connect to Aider Bridge: " + e.Message);
+            client = null;//clears client reference for failed connection
+            stream = null;//clears stream reference
+        }
     }
 
     public static void Send(AiderRequest request)

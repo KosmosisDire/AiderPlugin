@@ -13,77 +13,16 @@ public class AiderChatWindow : EditorWindow
 {
     public AiderChatList chatList;
     public AiderContextList contextList;
-    private Process aiderBridgeProcess; //process to manage aider bridge connection
 
     private void OnEnable()
     {
-        StartAiderBridge(); // Start the bridge when the window is enabled
+        AiderRunner.RunAiderBridge();
     }
 
     private void OnDisable()
     {
-        StopAiderBridge(); // Stop the bridge when the window is disabled
+        AiderRunner.KillAiderBridge();
     }
-
-    private void StartAiderBridge()
-    {
-        if (aiderBridgeProcess != null && !aiderBridgeProcess.HasExited)
-        {
-            return; // Bridge is already running
-        }
-
-        string scriptPath = Path.Combine(Application.dataPath, "Backend/aider-bridge.py"); // Adjust the path as needed
-        if (!File.Exists(scriptPath))
-        {
-            UnityEngine.Debug.LogError("AiderBridge.py not found at: " + scriptPath);
-            return;
-        }
-
-        aiderBridgeProcess = new Process();
-        aiderBridgeProcess.StartInfo.FileName = "python"; // Or "python3"
-        aiderBridgeProcess.StartInfo.Arguments = scriptPath;
-        aiderBridgeProcess.StartInfo.UseShellExecute = false;
-        aiderBridgeProcess.StartInfo.RedirectStandardOutput = true;
-        aiderBridgeProcess.StartInfo.RedirectStandardError = true;
-        aiderBridgeProcess.StartInfo.CreateNoWindow = true; // Run in background
-
-        aiderBridgeProcess.OutputDataReceived += (sender, e) =>
-        {
-            if (!string.IsNullOrEmpty(e.Data))
-            {
-                UnityEngine.Debug.LogError("Aider Bridge Output: " + e.Data);
-            }
-        };
-
-        aiderBridgeProcess.ErrorDataReceived += (sender, e) =>
-        {
-            if (!string.IsNullOrEmpty(e.Data))
-            {
-                UnityEngine.Debug.LogError("Aider Bridge Error: " + e.Data);
-            }
-        };
-
-        aiderBridgeProcess.Start();
-        aiderBridgeProcess.BeginOutputReadLine();
-        aiderBridgeProcess.BeginErrorReadLine();
-
-        UnityEngine.Debug.LogError("Aider Bridge started.");
-
-        // make sure the bridge is running before connecting.
-        System.Threading.Thread.Sleep(500); // Adjust as needed.
-        Client.ConnectToBridge(); // connect to bridge.
-    }
-
-    private void StopAiderBridge()
-    {
-        if (aiderBridgeProcess != null && !aiderBridgeProcess.HasExited)
-        {
-            aiderBridgeProcess.Kill();
-            aiderBridgeProcess.WaitForExit();
-            UnityEngine.Debug.LogError("Aider Bridge stopped.");
-        }
-    }
-
 
     [MenuItem("Aider/Chat Window")]
     public static void ShowWindow()

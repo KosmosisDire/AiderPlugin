@@ -11,7 +11,7 @@ public class AiderRunner
     static Process aider;
 
     // Method to check if the bridge process is running, and restart it if necessary
-    static bool EnsureAiderBridgeRunning()
+    public static bool EnsureAiderBridgeRunning()
     {
         if (aiderBridge == null || aiderBridge.HasExited)
         {
@@ -74,18 +74,6 @@ public class AiderRunner
         aiderProcess.Start();
 
         return aiderProcess;
-    }
-
-    [MenuItem("Aider/Update Models List")]
-    public static void UpdateModelsList()
-    {
-        if (aiderBridge == null || aiderBridge.HasExited)
-        {
-            Debug.LogError("Aider Bridge is not running");
-            return;
-        }
-
-        RunPython("Backend/update-models.py");
     }
 
     [MenuItem("Aider/Kill Aider")]
