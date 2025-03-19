@@ -81,7 +81,7 @@ public class Client : Editor
         {
             if (!IsConnected)
             {
-                MainThread.LogError("Not connected to bridge");
+                Debug.LogError("Not connected to bridge");
                 break;
             }
 
@@ -91,7 +91,7 @@ public class Client : Editor
 
             if (bytes == 0)
             {
-                MainThread.LogError("Connection closed");
+                Debug.LogError("Connection closed");
                 break;
             }
 
@@ -103,6 +103,62 @@ public class Client : Editor
                 break;
             }
         }
+    }
+
+    public static AiderResponse SyncReceiveOne()
+    {
+        if (!IsConnected)
+        {
+            return AiderResponse.Error("Not connected to bridge");
+        }
+
+        byte[] data = new byte[1024];
+        int bytes = stream.Read(data, 0, data.Length);
+
+        if (bytes == 0)
+        {
+            return AiderResponse.Error("Connection closed");
+        }
+
+        var response = AiderResponse.Deserialize(data);
+        return response;
+    }
+
+    /// <returns>Get a list of all files currently in the context</returns>
+    public static string[] GetContextList()
+    {
+        Send(new AiderRequest(AiderCommand.Ls, ""));
+        var resp =  SyncReceiveOne();
+        if (resp.IsError)
+        {
+            return new string[0];
+        }
+
+        return resp.Content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+    }
+
+    /// <summary>
+    /// Add a file to the context
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns>True if the add succeeded, false if the add failed for any reason.</returns>
+    public static bool AddFile(string filePath)
+    {
+        Send(new AiderRequest(AiderCommand.Add, filePath));
+        var resp = SyncReceiveOne();
+        return !resp.IsError;
+    }
+
+    /// <summary>
+    /// Drop a file from the context
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns>True if the drop succeeded, false if the drop failed for any reason.</returns>
+    public static bool DropFile(string filePath)
+    {
+        Send(new AiderRequest(AiderCommand.Drop, filePath));
+        var resp = SyncReceiveOne();
+        return !resp.IsError;
     }
 
 }

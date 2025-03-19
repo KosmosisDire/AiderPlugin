@@ -20,27 +20,53 @@ class AiderCommand(IntEnum):
     RESET = 14
     UNDO = 15
     WEB = 16
+    UNKNOWN = 17
+
 
 class AiderRequest:
-    def __init__(self, command: AiderCommand, content: str):
-        self.command = command
+    def __init__(self, content: str):
         self.content = content
     
     # see Interface.cs for the serialization function
     @classmethod
     def deserialize(cls, data: bytes) -> 'AiderRequest':
-        command = struct.unpack('<i', data[0:4])[0]
-        content_length = struct.unpack('<i', data[4:8])[0]
-        content = data[8:8+content_length].decode()
+        content_length = struct.unpack('<i', data[0:4])[0]
+        content = data[4:4+content_length].decode()
+        print(f"Deserialized request: {content}")
 
-        return cls(AiderCommand(command), content)
+        return cls(content)
+    
+    def get_command_string(self) -> str:
+        name = ""
+        if self.content.strip().startswith("/"):
+            name = self.content.strip().split(" ")[0].upper().replace("/", "")
+
+        return name
+    
+    def get_command(self) -> AiderCommand:
+        command = AiderCommand.NONE
+        if self.content.strip().startswith("/"):
+            command_name = self.get_command_string()
+            if hasattr(AiderCommand, command_name):
+                command = AiderCommand[command_name]
+            else:
+                print(f"Command {command_name} not found")
+                command = AiderCommand.UNKNOWN
+
+        return command
+    
+    def strip_command(self) -> str:
+        content = self.content
+        if self.content.strip().startswith("/"):
+            content = " ".join(self.content.strip().split(" ")[1:])
+        
+        return content
     
 class AiderResponse:
-    def __init__(self, content: str, part: int, last: bool):
+    def __init__(self, content: str, last: bool = False, error: bool = False):
         self.content = content
-        self.part = part
         self.last = last
+        self.error = error
 
     def serialize(self) -> bytes:
-        return struct.pack('<i', len(self.content)) + self.content.encode() + struct.pack('<i', self.part) + struct.pack('<?', self.last)
-    
+        return struct.pack('<i', len(self.content)) + self.content.encode() + struct.pack('<?', self.last) + struct.pack('<?', self.error)
