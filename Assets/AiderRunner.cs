@@ -9,11 +9,25 @@ public class AiderRunner
 {
     static Process aiderBridge;
     static Process aider;
+
+    // Method to check if the bridge process is running, and restart it if necessary
+    public static bool EnsureAiderBridgeRunning()
+    {
+        if (aiderBridge == null || aiderBridge.HasExited)
+        {
+            Debug.Log("Aider Bridge is not running, starting it now.");
+            aiderBridge = RunPython("Backend/aider-bridge.py");
+            return true;
+        }
+        return false;
+    }
+
+    // Runs the Python script for the bridge
     static Process RunPython(string pythonScriptPath)
     {
         var path = Path.Combine(Environment.CurrentDirectory, "Assets", pythonScriptPath);
         Debug.Log($"Running python script at {path}");
-        // assumes python is available on the path (this may be a fine assumption to make?)
+
         Process pythonProcess = new()
         {
             StartInfo = new ProcessStartInfo("python", path)
@@ -31,10 +45,10 @@ public class AiderRunner
     [MenuItem("Aider/Run Aider Bridge")]
     public static Process RunAiderBridge()
     {
-        aiderBridge = RunPython("Backend/aider-bridge.py");
-        return aiderBridge;
+        return EnsureAiderBridgeRunning() ? aiderBridge : null;
     }
 
+    // Kill the Aider Bridge process
     [MenuItem("Aider/Kill Aider Bridge")]
     public static void KillAiderBridge()
     {
@@ -44,6 +58,7 @@ public class AiderRunner
         }
     }
 
+    // Start Aider process
     [MenuItem("Aider/Run Aider")]
     public static Process RunAider()
     {
@@ -59,18 +74,6 @@ public class AiderRunner
         aiderProcess.Start();
 
         return aiderProcess;
-    }
-
-    [MenuItem("Aider/Update Models List")]
-    public static void UpdateModelsList()
-    {
-        if (aiderBridge == null || aiderBridge.HasExited)
-        {
-            Debug.LogError("Aider Bridge is not running");
-            return;
-        }
-
-        RunPython("Backend/update-models.py");
     }
 
     [MenuItem("Aider/Kill Aider")]

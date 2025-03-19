@@ -1,14 +1,28 @@
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.Diagnostics; //Added for process management
+using System.IO; //Added for file path operation
+using System.Threading;
+using Debug = UnityEngine.Debug;
+
 
 public class AiderChatWindow : EditorWindow
 {
     public AiderChatList chatList;
     public AiderContextList contextList;
+
+    private void OnEnable()
+    {
+        AiderRunner.RunAiderBridge();
+    }
+
+    private void OnDisable()
+    {
+        AiderRunner.KillAiderBridge();
+    }
 
     [MenuItem("Aider/Chat Window")]
     public static void ShowWindow()
@@ -48,7 +62,7 @@ public class AiderChatWindow : EditorWindow
 
         Button button = new Button(() =>
         {
-            Debug.Log($"Sending: {textField.value}");
+            UnityEngine.Debug.Log($"Sending: {textField.value}");
             var req = new AiderRequest(textField.value);
             textField.value = "";
 

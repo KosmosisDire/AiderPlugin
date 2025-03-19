@@ -14,12 +14,24 @@ public class Client : Editor
 
     static bool IsConnected => client != null && stream != null && stream.CanWrite;
 
+    //Attempts to establish a tcp connection to aider bridge
     [MenuItem("Aider/Connect to Bridge")]
-    static void ConnectToBridge()
+    public static void ConnectToBridge()
     {
-        client = new();
-        client.Connect("localhost", 65234);
-        stream = client.GetStream();
+        try
+        {
+            AiderRunner.EnsureAiderBridgeRunning();
+            client = new();
+            client.Connect("localhost", 65234);
+            stream = client.GetStream();
+            Debug.Log("Connected to Aider Bridge.");//logs successful connection
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Failed to connect to Aider Bridge: " + e.Message);
+            client = null;//clears client reference for failed connection
+            stream = null;//clears stream reference
+        }
     }
 
     public static void Send(AiderRequest request)
@@ -36,8 +48,27 @@ public class Client : Editor
             }
         }
 
-        byte[] data = request.Serialize();
-        stream.Write(data, 0, data.Length);
+
+        try
+        {
+            byte[] data = request.Serialize();
+            stream.Write(data, 0, data.Length);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error sending message: " + e.Message);
+            ConnectToBridge(); //try to reconnect if send fails
+            if (IsConnected)
+            {
+                byte[] data = request.Serialize();
+                stream.Write(data, 0, data.Length);
+            }
+            else
+            {
+                Debug.LogError("Failed to reconnect after send error");
+
+            }
+        }
     }
 
     static CancellationTokenSource cts = new();

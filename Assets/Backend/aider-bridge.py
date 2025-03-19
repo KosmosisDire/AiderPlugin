@@ -117,7 +117,6 @@ def main():
                                 server.send_error(f"Cannot drop {name} because it is not in chat.")
 
                         continue
-                
 
                 for output in aider_main.send_message_get_output(request.content):
                     server.send(AiderResponse(output))
