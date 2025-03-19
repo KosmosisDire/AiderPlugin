@@ -16,12 +16,7 @@ public class AiderChatWindow : EditorWindow
 
     private void OnEnable()
     {
-        AiderRunner.RunAiderBridge();
-    }
-
-    private void OnDisable()
-    {
-        AiderRunner.KillAiderBridge();
+        AiderRunner.EnsureAiderBridgeRunning();
     }
 
     [MenuItem("Aider/Chat Window")]
@@ -144,6 +139,7 @@ public class AiderChatWindow : EditorWindow
         if (!current.isUser)
         {
             current.AppendText(response.Content);
+            chatList.ScrollToBottom();
 
             if (response.Last)
             {

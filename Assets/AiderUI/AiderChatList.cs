@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Serializable = System.SerializableAttribute;
@@ -44,12 +45,19 @@ public class AiderChatList : ScrollView, IEnumerable<AiderChatMessage>
         }
     }
 
-    public void AddMessage(string content, bool isUser, string placeholder)
+    public void ScrollToBottom()
+    {
+        verticalScroller.value = verticalScroller.highValue > 0 ? verticalScroller.highValue : 0;
+    }
+
+    public async void AddMessage(string content, bool isUser, string placeholder)
     {
         var msg = new AiderChatMessage(content, isUser, placeholder);
         this.Add(msg);
         chatList.Add(msg);
         SerializeChat();
+        await Task.Delay(100);
+        ScrollToBottom();
     }
 
     public new AiderChatMessage this[int index]
