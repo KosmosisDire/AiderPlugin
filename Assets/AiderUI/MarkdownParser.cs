@@ -103,10 +103,10 @@ public static class MarkdownParser
         var bold2 = new Regex(@"\*\*(.+?)\*\*", RegexOptions.Multiline);
         var italic = new Regex(@"_(.+?)_", RegexOptions.Multiline);
         var italic2 = new Regex(@"\*(.+?)\*", RegexOptions.Multiline);
-        var mark = new Regex(@"==(.+?)==", RegexOptions.Multiline);
+        var mark = new Regex(@"==([^=\s]+?)==", RegexOptions.Multiline);
         var link = new Regex(@"\[.+\]\((.+)\)", RegexOptions.Multiline);
-        var codeNoDes = new Regex(@"(`.+?`)", RegexOptions.Multiline);
-        var code = new Regex(@"`(.+?)`", RegexOptions.Multiline);
+        var codeNoDes = new Regex(@"(`[^`\s]+?`)", RegexOptions.Multiline);
+        var code = new Regex(@"`([^`\s]+?)`", RegexOptions.Multiline);
 
         markdown = Apply(link, markdown, "u");
         markdown = Apply(header6, markdown, "size", "110%");
