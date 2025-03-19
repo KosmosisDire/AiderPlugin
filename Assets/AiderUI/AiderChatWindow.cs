@@ -1,4 +1,4 @@
-
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
@@ -82,6 +82,28 @@ public class AiderChatWindow : EditorWindow
         settingsButton.AddToClassList("settings-button");
         root.Add(settingsButton);
 
+        root.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
+        root.RegisterCallback<DragPerformEvent>(OnDragPerform);
+    }
+    private void OnDragUpdated(DragUpdatedEvent evt)
+    {
+        DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+    }
+
+    private void OnDragPerform(DragPerformEvent evt)
+    {
+        DragAndDrop.AcceptDrag();
+
+        foreach (var path in DragAndDrop.paths)
+        {
+            if (File.Exists(path))
+            {
+                Client.AddFile(path);
+                var context = Client.GetContextList();
+                contextList.Update(context);
+                Debug.Log($"Added {path} to the context");
+            }
+        }
     }
 
     private async void HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
