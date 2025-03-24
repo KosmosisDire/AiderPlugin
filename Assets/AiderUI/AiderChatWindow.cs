@@ -8,11 +8,18 @@ using System.IO; //Added for file path operation
 using System.Threading;
 using Debug = UnityEngine.Debug;
 
-
 public class AiderChatWindow : EditorWindow
 {
     public AiderChatList chatList;
     public AiderContextList contextList;
+
+    private string[] aiderCommands = {
+        "/ADD", "/ARCHITECT", "/ASK", "/CHAT_MODE", "/CLEAR", "/CODE",
+        "/COMMIT", "/DROP", "/LINT", "/LOAD", "/LS", "/MAP", "/MAP_REFRESH",
+        "/READ_ONLY", "/RESET", "/UNDO", "/WEB"
+    };
+    private string selectedCommand = string.Empty;
+    private DropdownField commandDropdown;
 
     private void OnEnable()
     {
@@ -46,6 +53,15 @@ public class AiderChatWindow : EditorWindow
         inputWrapper.AddToClassList("input-wrapper");
         footer.Add(inputWrapper);
 
+        // Dropdown menu for commands
+        commandDropdown = new DropdownField("Command", aiderCommands.ToList(), 0);
+        commandDropdown.RegisterValueChangedCallback(evt =>
+        {
+            selectedCommand = evt.newValue;
+        });
+        commandDropdown.style.width = 100;
+        inputWrapper.Add(commandDropdown);
+
         // make chat input
         TextField textField = new()
         {
@@ -57,14 +73,31 @@ public class AiderChatWindow : EditorWindow
 
         Button button = new Button(() =>
         {
-            UnityEngine.Debug.Log($"Sending: {textField.value}");
-            var req = new AiderRequest(textField.value);
-            textField.value = "";
+            string inputText = textField.value.Trim();
 
+            // Check if user typed a command at the beginning
+            if (inputText.StartsWith("/"))
+            {
+                string typedCommand = inputText.Split(' ')[0];
+                if (aiderCommands.Contains(typedCommand))
+                {
+                    selectedCommand = typedCommand;
+                    commandDropdown.value = typedCommand;
+                    inputText = inputText.Substring(typedCommand.Length).Trim();
+                }
+            }
+
+            // If there's no command, treat as a plain message
+            string messageToSend = string.IsNullOrEmpty(selectedCommand) ? inputText : $"{selectedCommand} {inputText}";
+
+            UnityEngine.Debug.Log($"Sending: {messageToSend}");
+            var req = new AiderRequest(messageToSend);
+            textField.value = ""; 
+            
             Client.Send(req);
-            chatList.AddMessage(req.Content, true, "Empty Message");
-            chatList.AddMessage("", false, "Thinking...");
-            Client.AsyncReceive(HandleResponse);
+            chatList.AddMessage(req.Content, true, "Empty Message"); 
+            chatList.AddMessage("", false, "Thinking..."); 
+            Client.AsyncReceive(HandleResponse); 
         })
         {
             style =
@@ -86,7 +119,7 @@ public class AiderChatWindow : EditorWindow
         // add floating settings button at top left corner of window
         Button settingsButton = new Button(() =>
         {
-           config.Toggle();
+            config.Toggle();
         });
         settingsButton.AddToClassList("settings-button");
         root.Add(settingsButton);
@@ -94,6 +127,7 @@ public class AiderChatWindow : EditorWindow
         root.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
         root.RegisterCallback<DragPerformEvent>(OnDragPerform);
     }
+
     private void OnDragUpdated(DragUpdatedEvent evt)
     {
         DragAndDrop.visualMode = DragAndDropVisualMode.Copy;

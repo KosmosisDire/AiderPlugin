@@ -27,10 +27,11 @@ public class AiderRunner
     {
         var path = Path.Combine(Environment.CurrentDirectory, "Assets", pythonScriptPath);
         Debug.Log($"Running python script at {path}");
+        string pythonPath = @"C:\Users\Lupil\AppData\Local\Programs\Python\Python310\python.exe";//specified path here
 
         Process pythonProcess = new()
         {
-            StartInfo = new ProcessStartInfo("python", path)
+            StartInfo = new ProcessStartInfo(pythonPath, path)//changed python to pythonPath
             {
                 UseShellExecute = true,
                 CreateNoWindow = false,
