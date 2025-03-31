@@ -7,6 +7,7 @@ using System.Diagnostics; //Added for process management
 using System.IO; //Added for file path operation
 using System.Threading;
 using Debug = UnityEngine.Debug;
+using System;
 
 
 public class AiderChatWindow : EditorWindow
@@ -93,6 +94,23 @@ public class AiderChatWindow : EditorWindow
 
         root.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
         root.RegisterCallback<DragPerformEvent>(OnDragPerform);
+        
+        // Add floating add chat button at the top right corner
+        Button addChat = new Button(() =>
+        {
+            // Clears Aider's context
+            Client.Send(new AiderRequest(AiderCommand.Reset, ""));
+            contextList.Update(Client.GetContextList());
+
+            // Replaces the current chatList with a new one by storing the index and replacing with the timestamped one
+            int index = root.IndexOf(chatList);
+            string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss");
+            root.Remove(chatList);
+            chatList = new AiderChatList(timestamp + "-ChatList");
+            root.Insert(index, chatList);
+        });
+        addChat.AddToClassList("add-chat-button");
+        root.Add(addChat);
     }
     private void OnDragUpdated(DragUpdatedEvent evt)
     {
