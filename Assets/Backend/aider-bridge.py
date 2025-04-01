@@ -117,6 +117,13 @@ def main():
                                 server.send_error(f"Cannot drop {name} because it is not in chat.")
 
                         continue
+                    case AiderCommand.RESET:
+                        coder.abs_fnames = set()
+                        coder.abs_read_only_fnames = set()
+                        coder.done_messages = []
+                        coder.cur_messages = []
+#                        server.send_string("Reset chat.")
+                        continue
 
                 for output in aider_main.send_message_get_output(request.content):
                     server.send(AiderResponse(output))

@@ -7,6 +7,7 @@ using System.Diagnostics; //Added for process management
 using System.IO; //Added for file path operation
 using System.Threading;
 using Debug = UnityEngine.Debug;
+using System;
 
 
 public class AiderChatWindow : EditorWindow
@@ -32,8 +33,7 @@ public class AiderChatWindow : EditorWindow
         root.AddToClassList(EditorGUIUtility.isProSkin ? "dark-mode" : "light-mode");
         root.AddToClassList("aider-chat-window");
 
-        chatList = new AiderChatList("ChatList");
-        root.Add(chatList);
+        NewChat();
 
         var inspectorSkin = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector);
 
@@ -93,7 +93,36 @@ public class AiderChatWindow : EditorWindow
 
         root.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
         root.RegisterCallback<DragPerformEvent>(OnDragPerform);
+        
+        // Add floating add chat button at the top right corner
+        Button addChat = new Button(NewChat);
+        addChat.AddToClassList("add-chat-button");
+        root.Add(addChat);
     }
+
+    public void NewChat()
+    {
+        VisualElement root = rootVisualElement;
+
+        // Clears Aider's context
+        Client.Reset();
+        contextList?.Update(Client.GetContextList());
+
+        int index = 0;
+        if (chatList != null)
+        {
+            index = root.IndexOf(chatList);
+            chatList.RemoveFromHierarchy();
+            chatList = null;
+        }
+
+        string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss");
+        chatList = new AiderChatList(timestamp + "-AiderChat");
+        root.Insert(index, chatList);
+    }
+
+
+
     private void OnDragUpdated(DragUpdatedEvent evt)
     {
         DragAndDrop.visualMode = DragAndDropVisualMode.Copy;

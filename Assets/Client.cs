@@ -16,7 +16,7 @@ public class Client : Editor
 
     //Attempts to establish a tcp connection to aider bridge
     [MenuItem("Aider/Connect to Bridge")]
-    public static void ConnectToBridge()
+    public static bool ConnectToBridge()
     {
         try
         {
@@ -24,17 +24,19 @@ public class Client : Editor
             client = new();
             client.Connect("localhost", 65234);
             stream = client.GetStream();
-            Debug.Log("Connected to Aider Bridge.");//logs successful connection
+            Debug.Log("Connected to Aider Bridge.");
+            return true;
         }
         catch (Exception e)
         {
             Debug.LogError("Failed to connect to Aider Bridge: " + e.Message);
-            client = null;//clears client reference for failed connection
-            stream = null;//clears stream reference
+            client = null;
+            stream = null;
+            return false;
         }
     }
 
-    public static void Send(AiderRequest request)
+    public static bool Send(AiderRequest request)
     {
         if (!IsConnected)
         {
@@ -44,7 +46,7 @@ public class Client : Editor
             if (!IsConnected)
             {
                 Debug.LogError("Failed to connect to bridge");
-                return;
+                return false;
             }
         }
 
@@ -53,21 +55,31 @@ public class Client : Editor
         {
             byte[] data = request.Serialize();
             stream.Write(data, 0, data.Length);
+            return true;
         }
         catch (Exception e)
         {
             Debug.LogError("Error sending message: " + e.Message);
-            ConnectToBridge(); //try to reconnect if send fails
+            ConnectToBridge();
             if (IsConnected)
             {
-                byte[] data = request.Serialize();
-                stream.Write(data, 0, data.Length);
+                try
+                {
+                    byte[] data = request.Serialize();
+                    stream.Write(data, 0, data.Length);
+                    return true;
+                }
+                catch (Exception e2)
+                {
+                    Debug.LogError("Failed to reconnect after send error: " + e2.Message);
+                }
             }
             else
             {
                 Debug.LogError("Failed to reconnect after send error");
-
             }
+
+            return false;
         }
     }
 
@@ -126,7 +138,11 @@ public class Client : Editor
     /// <returns>Get a list of all files currently in the context</returns>
     public static string[] GetContextList()
     {
-        Send(new AiderRequest(AiderCommand.Ls, ""));
+        if (!Send(new AiderRequest(AiderCommand.Ls, "")))
+        {
+            return new string[0];
+        }
+
         var resp =  SyncReceiveOne();
         if (resp.IsError)
         {
@@ -143,7 +159,11 @@ public class Client : Editor
     /// <returns>True if the add succeeded, false if the add failed for any reason.</returns>
     public static bool AddFile(string filePath)
     {
-        Send(new AiderRequest(AiderCommand.Add, filePath));
+        if (!Send(new AiderRequest(AiderCommand.Add, filePath)))
+        {
+            return false;
+        }
+
         var resp = SyncReceiveOne();
         return !resp.IsError;
     }
@@ -155,7 +175,22 @@ public class Client : Editor
     /// <returns>True if the drop succeeded, false if the drop failed for any reason.</returns>
     public static bool DropFile(string filePath)
     {
-        Send(new AiderRequest(AiderCommand.Drop, filePath));
+        if (!Send(new AiderRequest(AiderCommand.Drop, filePath)))
+        {
+            return false;
+        }
+
+        var resp = SyncReceiveOne();
+        return !resp.IsError;
+    }
+
+    public static bool Reset()
+    {
+        if (!Send(new AiderRequest(AiderCommand.Reset, "")))
+        {
+            return false;
+        }
+        
         var resp = SyncReceiveOne();
         return !resp.IsError;
     }
