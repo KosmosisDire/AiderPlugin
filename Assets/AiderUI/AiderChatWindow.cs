@@ -33,8 +33,7 @@ public class AiderChatWindow : EditorWindow
         root.AddToClassList(EditorGUIUtility.isProSkin ? "dark-mode" : "light-mode");
         root.AddToClassList("aider-chat-window");
 
-        chatList = new AiderChatList("ChatList");
-        root.Add(chatList);
+        NewChat();
 
         var inspectorSkin = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector);
 
@@ -96,22 +95,34 @@ public class AiderChatWindow : EditorWindow
         root.RegisterCallback<DragPerformEvent>(OnDragPerform);
         
         // Add floating add chat button at the top right corner
-        Button addChat = new Button(() =>
-        {
-            // Clears Aider's context
-            Client.Send(new AiderRequest(AiderCommand.Reset, ""));
-            contextList.Update(Client.GetContextList());
-
-            // Replaces the current chatList with a new one by storing the index and replacing with the timestamped one
-            int index = root.IndexOf(chatList);
-            string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss");
-            root.Remove(chatList);
-            chatList = new AiderChatList(timestamp + "-ChatList");
-            root.Insert(index, chatList);
-        });
+        Button addChat = new Button(NewChat);
         addChat.AddToClassList("add-chat-button");
         root.Add(addChat);
     }
+
+    public void NewChat()
+    {
+        VisualElement root = rootVisualElement;
+
+        // Clears Aider's context
+        Client.Reset();
+        contextList?.Update(Client.GetContextList());
+
+        int index = 0;
+        if (chatList != null)
+        {
+            index = root.IndexOf(chatList);
+            chatList.RemoveFromHierarchy();
+            chatList = null;
+        }
+
+        string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss");
+        chatList = new AiderChatList(timestamp + "-AiderChat");
+        root.Insert(index, chatList);
+    }
+
+
+
     private void OnDragUpdated(DragUpdatedEvent evt)
     {
         DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
