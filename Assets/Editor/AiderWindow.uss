@@ -33,6 +33,7 @@
     background-color: var(--background-color);
     --send-icon: url("/Assets/Editor/Lucide/arrow-up.png");
     --settings-icon: url("/Assets/Editor/Lucide/settings.png");
+    --add-icon: url("/Assets/Editor/Lucide/plus-circle.png");
     --copy-icon: url("/Assets/Editor/Lucide/copy.png");
     --check-icon: url("/Assets/Editor/Lucide/circle-check.png");
     --close-icon: url("/Assets/Editor/Lucide/close.png");
@@ -205,6 +206,18 @@
     background-color: var(--surface-color);
     background-size: 50%;
 }
+.add-chat-button
+{
+    position: absolute;
+    top: 10px;
+    right: 25px;
+    width: 45px;
+    height: 40px;
+    background-image: var(--add-icon); 
+    background-color: var(--surface-color);
+    background-size: 50%;
+}
+
 
 .history-button
 {
