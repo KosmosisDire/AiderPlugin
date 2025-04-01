@@ -36,6 +36,7 @@
     --copy-icon: url("/Assets/Editor/Lucide/copy.png");
     --check-icon: url("/Assets/Editor/Lucide/circle-check.png");
     --close-icon: url("/Assets/Editor/Lucide/close.png");
+    --history-icon: url("/Assets/Editor/Lucide/history.png");
 }
 
 .placeholder .unity-text-element
@@ -203,6 +204,18 @@
     background-image: var(--settings-icon);
     background-color: var(--surface-color);
     background-size: 50%;
+}
+
+.history-button
+{
+    position: absolute;
+    top: 10px;
+    left: 60px;
+    width: 40px;
+    height: 40px;
+    background-image: var(--history-icon);
+    background-color: var(--surface-color);
+    background-size: 55%;
 }
 
 .hide

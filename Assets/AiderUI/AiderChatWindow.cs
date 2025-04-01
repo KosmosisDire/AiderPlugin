@@ -13,6 +13,7 @@ public class AiderChatWindow : EditorWindow
 {
     public AiderChatList chatList;
     public AiderContextList contextList;
+    public AiderChatHistory chatHistory;
 
     private void OnEnable()
     {
@@ -25,6 +26,7 @@ public class AiderChatWindow : EditorWindow
         GetWindow<AiderChatWindow>("Aider");
     }
 
+
     private void CreateGUI()
     {
         VisualElement root = rootVisualElement;
@@ -32,7 +34,7 @@ public class AiderChatWindow : EditorWindow
         root.AddToClassList(EditorGUIUtility.isProSkin ? "dark-mode" : "light-mode");
         root.AddToClassList("aider-chat-window");
 
-        chatList = new AiderChatList("ChatList");
+        chatList = new AiderChatList("1", AiderChatHistory.ChatSavePath);
         root.Add(chatList);
 
         var inspectorSkin = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector);
@@ -90,6 +92,14 @@ public class AiderChatWindow : EditorWindow
         });
         settingsButton.AddToClassList("settings-button");
         root.Add(settingsButton);
+
+        // add floating history button at top left corner of window
+        Button historyButton = new Button(() =>
+        {
+           
+        });
+        historyButton.AddToClassList("history-button");
+        root.Add(historyButton);
 
         root.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
         root.RegisterCallback<DragPerformEvent>(OnDragPerform);

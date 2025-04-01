@@ -7,18 +7,19 @@ using Serializable = System.SerializableAttribute;
 [Serializable]
 public class AiderChatList : ScrollView, IEnumerable<AiderChatMessage>
 {
-    [SerializeField]
-    private List<AiderChatMessage> chatList = new();
-    [SerializeField]
-    public string chatName;
+    [SerializeField] private List<AiderChatMessage> chatList = new();
+    [SerializeField] public string chatID;
+    [SerializeField] public string chatTitle;
 
-    private string SavePath => $"Assets/AiderUI/{chatName}.json";
+    private string chatSaveFolder;
+    public string SavePath => $"{chatSaveFolder}/{chatID}.json";
 
-    public AiderChatList(string chatName)
+    public AiderChatList(string chatID, string chatSaveFolder)
     {
         AddToClassList("chat-container");
         chatList = new List<AiderChatMessage>();
-        this.chatName = chatName;
+        this.chatID = chatID;
+        this.chatSaveFolder = chatSaveFolder;
         DeserializeChat();
     }
 
