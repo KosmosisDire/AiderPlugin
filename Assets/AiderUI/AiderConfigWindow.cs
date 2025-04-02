@@ -7,13 +7,15 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public class AiderConfigWindow
+public class AiderConfigWindow : VisualElement
 {
     private string provider;
     private string yamlConfig;
     private Dictionary<string, object> yamlData;
     private string configFilePath =  Path.Combine(Application.dataPath, "../.aider.conf.yml");
     private bool shown = false;
+
+    public bool IsOpen => shown;
 
     public static readonly Dictionary<string, string> models = new Dictionary<string, string>
     {
@@ -61,20 +63,17 @@ public class AiderConfigWindow
         ["perplexity/sonar-small-chat"] = "Sonar Small (Perplexity)"
     };
 
-
-    VisualElement root;
-
     public async void Show()
     {
         Update();
+        await this.FadeIn(0.2f);
         shown = true;
-        await root.FadeIn(0.2f);
     }
 
     public async void Hide()
     {
         shown = false;
-        await root.FadeOut(0.2f);
+        await this.FadeOut(0.2f);
     }
 
     public void Toggle()
@@ -83,22 +82,18 @@ public class AiderConfigWindow
         else Show();
     }
 
-    public AiderConfigWindow(VisualElement parent)
+    public AiderConfigWindow()
     {
         yamlData = ParseYamlConfig();
-
-        root = new();
-        root.AddToClassList("config-window");
+        AddToClassList("config-window");
         Hide();
-        parent.Add(root);
-
         Update();
     }
 
     public void Update()
     {
         yamlData = ParseYamlConfig();
-        root.Clear();
+        Clear();
 
         var titleLabel = new Label("Aider Config") 
         { 
@@ -109,13 +104,13 @@ public class AiderConfigWindow
                 marginBottom = new StyleLength(new Length(10))
             }
         };
-        root.Add(titleLabel);
+        Add(titleLabel);
 
         Label editTip = new("You may also modify the config file at <b>.aider.conf.yml</b> in your project root (outside Assets).");
         editTip.style.whiteSpace = WhiteSpace.PreWrap;
         editTip.style.marginBottom = 15;
         editTip.AddToClassList("tip");
-        root.Add(editTip);
+        Add(editTip);
 
         foreach (var pair in yamlData)
         {
@@ -141,15 +136,15 @@ public class AiderConfigWindow
                     yamlData["api-key"] = $"{provider} = {GetAPIKeyFromValue(yamlData["api-key"] as string)}";
                     providerField.value = provider;
                 });
-                root.Add(modelField);
-                root.Add(providerField);
+                Add(modelField);
+                Add(providerField);
             }
             else if (key == "api-key")
             {
                 var apiKey = GetAPIKeyFromValue(value as string);
                 var apiKeyField = new TextField("API Key") { value = apiKey };
                 apiKeyField.RegisterValueChangedCallback(evt => yamlData[key] = $"{provider} = {evt.newValue}");
-                root.Add(apiKeyField);
+                Add(apiKeyField);
             }
             else if (key == "provider")
             {
@@ -159,25 +154,25 @@ public class AiderConfigWindow
             {
                 var toggle = new Toggle(keyDisplayName) { value = v };
                 toggle.RegisterValueChangedCallback(evt => yamlData[key] = evt.newValue);
-                root.Add(toggle);
+                Add(toggle);
             }
             else if (value is int i)
             {
                 var intField = new IntegerField(keyDisplayName) { value = i };
                 intField.RegisterValueChangedCallback(evt => yamlData[key] = evt.newValue);
-                root.Add(intField);
+                Add(intField);
             }
             else if (value is float f)
             {
                 var floatField = new FloatField(keyDisplayName) { value = f };
                 floatField.RegisterValueChangedCallback(evt => yamlData[key] = evt.newValue);
-                root.Add(floatField);
+                Add(floatField);
             }
             else if (value is string s)
             {
                 var textField = new TextField(keyDisplayName) { value = s };
                 textField.RegisterValueChangedCallback(evt => yamlData[key] = evt.newValue);
-                root.Add(textField);
+                Add(textField);
             }
             else
             {
@@ -187,7 +182,7 @@ public class AiderConfigWindow
 
         var saveButton = new Button(() => SaveConfig()) { text = "Save" };
         saveButton.AddToClassList("save-button");
-        root.Add(saveButton);
+        Add(saveButton);
     }
 
     private string GetProviderFromModel(string modelName)

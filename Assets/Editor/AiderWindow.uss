@@ -1,4 +1,4 @@
-
+/* Theme Variables */
 .dark-mode
 {
     --user-color: rgb(5,5,5);
@@ -7,7 +7,7 @@
     --ai-color-muted: rgba(60,60,60, 0.5);
     --accent-color: rgb(54, 101, 255);
     --surface-color: rgb(20, 20, 20);
-    --surface-color-muted: rgba(20, 20, 20, 0.5);
+    --surface-color-muted: rgb(32, 32, 32);
     --bright-text-color: rgba(255, 255, 255, 0.95);
     --muted-text-color: rgba(255, 255, 255, 0.2);
     --red-text-color: rgb(255, 107, 94);
@@ -22,12 +22,13 @@
     --ai-color-muted: rgba(220,220,220, 0.5);
     --accent-color: rgb(189, 110, 0);
     --surface-color: rgb(219, 219, 219);
-    --surface-color-muted: rgba(219, 219, 219, 0.5);
+    --surface-color-muted: rgb(172, 172, 172);
     --bright-text-color: rgb(0, 0, 0);
     --muted-text-color: rgb(62, 4, 0);
     --background-color: rgb(255, 255, 255);
 }   
 
+/* Main / Asset Vars */
 .aider-chat-window
 {
     background-color: var(--background-color);
@@ -37,8 +38,127 @@
     --copy-icon: url("/Assets/Editor/Lucide/copy.png");
     --check-icon: url("/Assets/Editor/Lucide/circle-check.png");
     --close-icon: url("/Assets/Editor/Lucide/close.png");
+    --history-icon: url("/Assets/Editor/Lucide/history.png");
+    --empty-icon: url("/Assets/Editor/Lucide/bookmark-x.png");
+    --unity-icon: url("/Assets/Editor/Lucide/unity.png");
+    --trash-icon: url("/Assets/Editor/Lucide/trash-2.png");
 }
 
+/* Layout Elements */
+.chat-container
+{
+    flex-shrink: 1;
+    flex-grow: 1;
+    flex-direction: column;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 5px;
+}
+
+.history-container
+{
+    flex-shrink: 1;
+    flex-grow: 1;
+    flex-direction: column;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 10px;
+}
+
+.empty-container #unity-content-container
+{
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-content
+{
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    -unity-font-style: bold;
+}
+
+.empty-icon
+{
+    width: 100px;
+    height: 100px;
+    -unity-background-image-tint-color: var(--muted-text-color);
+    background-size: 100%;
+    margin-bottom: 10px;
+}
+
+.history-container .empty-icon
+{
+    background-image: var(--empty-icon);
+}
+
+.chat-container .empty-icon
+{
+    background-image: var(--unity-icon);
+    background-size: 80%;
+}
+
+.empty-content .unity-button
+{
+    height: 30px;
+    background-color: var(--accent-color);
+    border-radius: 5px;
+    font-size: 14px;
+    margin-top: 20px;
+}
+
+.header
+{
+    flex-shrink: 0;
+    flex-direction: row;
+    padding: 5px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    background-color: var(--surface-color);
+}
+
+.footer
+{
+    flex-shrink: 0;
+    flex-direction: column;
+    padding: 10px;
+    padding-bottom: 0px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    background-color: var(--surface-color);
+}
+
+.input-wrapper
+{
+    flex-direction: row;
+    width: 100%;
+}
+
+.config-window
+{
+    position: absolute;
+    top: 45px;
+    left: 0px;
+    padding: 8px;
+    border-radius: 10px;
+    max-width: 600px;
+    width: 70%;
+    background-color: var(--surface-color);
+}
+
+.config-window .unity-base-field
+{
+    margin-bottom: 5px;
+}
+
+.hide
+{
+    display: none;
+}
+
+/* Input Controls */
 .placeholder .unity-text-element
 {
     opacity: 0.5;
@@ -67,33 +187,7 @@
     font-size: 14px;
 }
 
-.footer
-{
-    flex-shrink: 0;
-    flex-direction: column;
-    padding: 10px;
-    padding-bottom: 0px;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    background-color: var(--surface-color);
-}
-
-.input-wrapper
-{
-    flex-direction: row;
-    width: 100%;
-}
-
-.chat-container
-{
-    flex-shrink: 1;
-    flex-grow: 1;
-    flex-direction: column;
-    padding-left: 5px;
-    padding-right: 5px;
-    padding-top: 5px;
-}
-
+/* Message */
 .message-container
 {
     padding: 10px;
@@ -129,13 +223,14 @@
     width: 100%;
 }
 
+/* Buttons / Interactive Elements */
 .unity-button
 {
     -unity-background-image-tint-color: var(--bright-text-color);
     scale: 1;
     border-radius: 10px;
     border-color: transparent;
-    transition: scale 0.2s;
+    transition: scale 0.2s, background-color 0.2s;
     margin: 0;
     cursor: link;
 }
@@ -150,6 +245,11 @@
     scale: 0.9;
 }
 
+.header .unity-button.button-active, 
+.header .unity-button.button-active:hover
+{
+    background-color: var(--accent-color);
+}
 .send-button
 {
     width: 35px;
@@ -161,6 +261,84 @@
     background-size: 70%;
 }
 
+.header .unity-button
+{
+    width: 30px;
+    height: 30px;
+    background-size: 60%;
+    background-color: transparent;
+}
+
+.header .unity-button:hover
+{
+    background-color: var(--surface-color-muted);
+}
+
+.settings-button
+{
+    margin-right: auto;
+    background-image: var(--settings-icon);
+}
+
+.history-button
+{
+    margin-right: 10px;
+    background-image: var(--history-icon);
+}
+
+.new-chat-button
+{
+    background-image: var(--add-icon); 
+    background-size: 65%;
+}
+
+.save-button
+{
+    margin-top: 15px;
+    width: 200px;
+    max-width: 80%;
+    align-self: center;
+}
+
+.copy-button
+{
+    position: absolute;
+    right: -10px;
+    bottom: -10px;
+    width: 25px;
+    height: 25px;
+    background-image: var(--copy-icon);
+    background-color: var(--surface-color);
+    background-size: 50%;
+    transition: background-color 0.2s, scale 0.2s;
+    
+}
+
+.copy-button.confirm
+{
+    background-image: var(--check-icon);
+    background-color: var(--accent-color);
+    background-size: 65%;
+}
+
+.trash-button
+{
+    width: 26px;
+    height: 26px;
+    background-image: var(--trash-icon);
+    background-size: 50%;
+    background-color: transparent;
+    opacity: 0.5;
+    transition: background-color 0.2s, scale 0.2s, opacity 0.2s, -unity-background-image-tint-color 0.2s;
+}
+
+.trash-button:hover
+{
+    opacity: 1;
+    -unity-background-image-tint-color: var(--red-text-color);
+}
+
+/* Context Elements */
 .context-list
 {
     flex-direction: row;
@@ -194,79 +372,7 @@
     scale: 1.2;
 }
 
-.settings-button
-{
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    width: 40px;
-    height: 40px;
-    background-image: var(--settings-icon);
-    background-color: var(--surface-color);
-    background-size: 50%;
-}
-.add-chat-button
-{
-    position: absolute;
-    top: 10px;
-    right: 25px;
-    width: 45px;
-    height: 40px;
-    background-image: var(--add-icon); 
-    background-color: var(--surface-color);
-    background-size: 50%;
-}
-
-
-.hide
-{
-    display: none;
-}
-
-.config-window
-{
-    position: absolute;
-    top: 55px;
-    left: 10px;
-    padding: 8px;
-    border-radius: 10px;
-    max-width: 70%;
-    background-color: var(--surface-color);
-}
-
-.config-window .unity-base-field
-{
-    margin-bottom: 5px;
-}
-
-.save-button
-{
-    margin-top: 15px;
-    width: 200px;
-    max-width: 80%;
-    align-self: center;
-}
-
-.copy-button
-{
-    position: absolute;
-    right: -10px;
-    bottom: -10px;
-    width: 25px;
-    height: 25px;
-    background-image: var(--copy-icon);
-    background-color: var(--surface-color);
-    background-size: 50%;
-    transition: background-color 0.2s, scale 0.2s;
-}
-
-.copy-button.confirm
-{
-    background-image: var(--check-icon);
-    background-color: var(--accent-color);
-    background-size: 65%;
-}
-
+/* Markdown Elements */
 .table
 {
     flex-direction: column;
@@ -338,4 +444,50 @@
     font-size: 14px;
     border-left-width: 3px;
     border-left-color: var(--accent-color);
+}
+
+/* History Elements */
+.history-card
+{
+    flex-direction: row;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    min-width: 200px;
+    background-color: var(--surface-color);
+    color: var(--bright-text-color);
+    cursor: link;
+    border-width: 1px;
+    transition: background-color 0.2s, border-color 0.2s;
+    border-color: rgba(0, 0, 0, 0.1);
+    justify-content: space-between;
+}
+
+.history-title-container
+{
+    flex-direction: column;
+}
+
+.history-title
+{
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin-bottom: 5px;
+    cursor: link;
+
+}
+
+.history-date
+{
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--muted-text-color);
+    cursor: link;
+}
+
+.history-card.hoverable-card:hover
+{
+    background-color: var(--surface-color-muted);
+    border-color: var(--muted-text-color);
 }
