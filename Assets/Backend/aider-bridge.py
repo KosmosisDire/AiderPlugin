@@ -122,7 +122,7 @@ def main():
                         coder.abs_read_only_fnames = set()
                         coder.done_messages = []
                         coder.cur_messages = []
-#                        server.send_string("Reset chat.")
+                        server.send_string("Reset chat successfully.")
                         continue
 
                 for output in aider_main.send_message_get_output(request.content):

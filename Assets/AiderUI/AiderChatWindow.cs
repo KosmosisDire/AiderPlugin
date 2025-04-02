@@ -15,6 +15,16 @@ public class AiderChatWindow : EditorWindow
     public AiderChatList chatList;
     public AiderContextList contextList;
     public AiderChatHistory chatHistory;
+    public AiderConfigWindow configWindow;
+    public VisualElement footer;
+    public VisualElement header;
+    public Button settingsButton;
+    public Button historyButton;
+    public Button newChatButton;
+    public Button sendButton;
+
+
+    public bool HistoryOpen => chatHistory != null && chatHistory.resolvedStyle.display == DisplayStyle.Flex;
 
     private void OnEnable()
     {
@@ -37,10 +47,15 @@ public class AiderChatWindow : EditorWindow
 
         NewChat();
 
+        // history 
+        chatHistory = new AiderChatHistory(this);
+        root.Add(chatHistory);
+        chatHistory.BuildChatList();
+
         var inspectorSkin = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector);
 
         // make a footer with a text input and send button with up arrow icon
-        VisualElement footer = new();
+        footer = new();
         footer.AddToClassList("footer");
         root.Add(footer);
 
@@ -57,57 +72,132 @@ public class AiderChatWindow : EditorWindow
         textField.SetPlaceholderText("How can I help you?");
         inputWrapper.Add(textField);
 
-        Button button = new Button(() =>
+        sendButton = new Button(() =>
         {
             UnityEngine.Debug.Log($"Sending: {textField.value}");
             var req = new AiderRequest(textField.value);
             textField.value = "";
+            
 
             Client.Send(req);
             chatList.AddMessage(req.Content, true, "Empty Message");
             chatList.AddMessage("", false, "Thinking...");
             Client.AsyncReceive(HandleResponse);
-        })
-        {
-            style =
-            {
-                scale = new StyleScale(StyleKeyword.Null),
-            }
-        };
-
-        button.AddToClassList("send-button");
-        inputWrapper.Add(button);
+        });
+        sendButton.style.scale = new StyleScale(StyleKeyword.Null);
+        sendButton.AddToClassList("send-button");
+        inputWrapper.Add(sendButton);
 
         // make context list
         contextList = new AiderContextList();
         contextList.Update(Client.GetContextList());
         footer.Add(contextList);
 
-        var config = new AiderConfigWindow(root);
+        configWindow = new AiderConfigWindow();
+        root.Add(configWindow);
+        root.RegisterCallback<ClickEvent>(evt =>
+        {
+            if (configWindow.IsOpen && evt.target != configWindow && !configWindow.Contains(evt.target as VisualElement))
+            {
+                HideConfig();
+            }
+        });
+
+        VisualElement header = new();
+        header.AddToClassList("header");
+        root.Insert(0, header);
 
         // add floating settings button at top left corner of window
-        Button settingsButton = new Button(() =>
+        settingsButton = new Button(() =>
         {
-           config.Toggle();
+            if (configWindow.IsOpen)
+            {
+                HideConfig();
+            }
+            else
+            {
+                ShowConfig();
+            }
         });
+        settingsButton.tooltip = "Settings";
         settingsButton.AddToClassList("settings-button");
-        root.Add(settingsButton);
+        header.Add(settingsButton);
 
         // add floating history button at top left corner of window
-        Button historyButton = new Button(() =>
+        historyButton = new Button();
+        historyButton.clickable.clicked += () => 
         {
-           
-        });
+            if (HistoryOpen)
+            {
+                ShowChat();
+            }
+            else
+            {
+                ShowHistory();
+            }
+        };
+
+        historyButton.tooltip = "History";
         historyButton.AddToClassList("history-button");
-        root.Add(historyButton);
+        header.Add(historyButton);
 
         root.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
         root.RegisterCallback<DragPerformEvent>(OnDragPerform);
         
         // Add floating add chat button at the top right corner
-        Button addChat = new Button(NewChat);
-        addChat.AddToClassList("add-chat-button");
-        root.Add(addChat);
+        newChatButton = new Button(NewChat);
+        newChatButton.tooltip = "New Chat";
+        newChatButton.AddToClassList("new-chat-button");
+        header.Add(newChatButton);
+
+        ShowChat();
+    }
+
+    public void ReplaceChat(AiderChatList chat)
+    {
+        VisualElement root = rootVisualElement;
+        int index = root.IndexOf(chatList);
+        if (index != -1)
+        {
+            root.Remove(chatList);
+            chatList = null;
+        }
+        else
+        {
+            index = 0;
+        }
+
+        chatList = chat;
+        root.Insert(index, chatList);
+    }
+
+    public void ShowChat(bool withFooter = true)
+    {
+        historyButton?.RemoveFromClassList("button-active");
+        if (chatList != null) chatList.style.display = DisplayStyle.Flex;
+        if (chatHistory != null) chatHistory.style.display = DisplayStyle.None;
+        if (withFooter && footer != null) footer.style.display = DisplayStyle.Flex;
+    }
+
+    public void ShowHistory()
+    {
+        historyButton?.AddToClassList("button-active");
+        chatHistory.BuildChatList();
+        if (chatList != null) chatList.style.display = DisplayStyle.None;
+        if (chatHistory != null) chatHistory.style.display = DisplayStyle.Flex;
+        if (footer != null) footer.style.display = DisplayStyle.None;
+    }
+
+    public void ShowConfig()
+    {
+        settingsButton?.AddToClassList("button-active");
+        configWindow.Show();
+    }
+
+    public void HideConfig()
+    {
+        settingsButton?.RemoveFromClassList("button-active");
+        configWindow.Hide();
     }
 
     public void NewChat()
@@ -122,16 +212,23 @@ public class AiderChatWindow : EditorWindow
         if (chatList != null)
         {
             index = root.IndexOf(chatList);
-            chatList.RemoveFromHierarchy();
-            chatList = null;
+            if (index != -1) // -1 means not found
+            {
+                chatList.RemoveFromHierarchy();
+                chatList = null;
+            }
+            else
+            {
+                index = 0;
+            }
         }
 
         string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss");
-        chatList = new AiderChatList(timestamp + "-AiderChat");
+        chatList = new AiderChatList(timestamp + "-AiderChat", AiderChatHistory.ChatSavePath);
         root.Insert(index, chatList);
+
+        ShowChat();
     }
-
-
 
     private void OnDragUpdated(DragUpdatedEvent evt)
     {
@@ -154,7 +251,7 @@ public class AiderChatWindow : EditorWindow
         }
     }
 
-    private async void HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
+    private void HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
     {
         Debug.Log("Response end");
         // reload assets in case a file was changed
@@ -166,10 +263,6 @@ public class AiderChatWindow : EditorWindow
         var context = Client.GetContextList();
         Debug.Log(context);
         contextList.Update(context);
-
-        // after a delay reload again in case writing the file took some time
-        await Task.Delay(1000);
-        AssetDatabase.Refresh();
     }
 
     private void HandleResponse(AiderResponse response)
