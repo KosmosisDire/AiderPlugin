@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEditor;
 using Debug = UnityEngine.Debug;
 
@@ -11,12 +12,13 @@ public class AiderRunner
     static Process aider;
 
     // Method to check if the bridge process is running, and restart it if necessary
-    public static bool EnsureAiderBridgeRunning()
+    public static async Task<bool> EnsureAiderBridgeRunning()
     {
         if (aiderBridge == null || aiderBridge.HasExited)
         {
             Debug.Log("Aider Bridge is not running, starting it now.");
             aiderBridge = RunPython("Backend/aider-bridge.py");
+            await Task.Delay(1000); // Wait for the bridge to start
             return true;
         }
         return false;
@@ -26,7 +28,6 @@ public class AiderRunner
     static Process RunPython(string pythonScriptPath)
     {
         var path = Path.Combine(Environment.CurrentDirectory, "Assets", pythonScriptPath);
-        Debug.Log($"Running python script at {path}");
 
         Process pythonProcess = new()
         {
@@ -43,9 +44,9 @@ public class AiderRunner
     }
 
     [MenuItem("Aider/Run Aider Bridge")]
-    public static Process RunAiderBridge()
+    public static async Task<Process> RunAiderBridge()
     {
-        return EnsureAiderBridgeRunning() ? aiderBridge : null;
+        return await EnsureAiderBridgeRunning() ? aiderBridge : null;
     }
 
     // Kill the Aider Bridge process

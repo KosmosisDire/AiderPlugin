@@ -76,9 +76,9 @@ public class AiderChatHistory : ScrollView
             emptyContainer.Add(emptyIcon);
             
 
-            var newChatButton = new Button(() =>
+            var newChatButton = new Button(async () =>
             {
-                chatSession.NewChat();
+                await chatSession.NewChat();
             })
             {
                 text = "New Chat"
@@ -131,7 +131,6 @@ public class AiderChatHistory : ScrollView
 
         foreach (var chat in availableChats)
         {
-            Debug.Log($"Chat: {chat.title}");
             var chatCard = new VisualElement();
             chatCard.RegisterCallback<MouseUpEvent>((evt) =>
             {
@@ -156,7 +155,6 @@ public class AiderChatHistory : ScrollView
 
             var trashButton = new Button(() =>
             {
-                Debug.Log($"Deleting chat: {chat.title}");
                 File.Delete(Path.Combine(ChatSavePath, chat.filename + ".json"));
                 BuildChatList();
             });

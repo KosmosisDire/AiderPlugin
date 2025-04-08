@@ -211,6 +211,13 @@
     margin-left: 60px;
 }
 
+.message-container.error-message
+{
+    border-color: var(--red-text-color);
+    background-color: rgba(255, 107, 94, 0.1);
+    color: var(--red-text-color);
+}
+
 .message-container #unity-text-input
 {
     background-color:rgba(0, 0, 0, 0);

@@ -1,3 +1,4 @@
+import io as stdio
 import os
 import sys
 from aider.coders import Coder
@@ -8,6 +9,8 @@ from aider.args import get_parser
 from pathlib import Path
 from dotenv import load_dotenv
 from aider.repo import ANY_GIT_ERROR, GitRepo
+import aider.coders as coders
+from unity_coder import UnityCoder
 
 def check_config_files_for_yes(config_files):
     found = False
@@ -101,7 +104,6 @@ def guessed_wrong_repo(io, git_root, fnames, git_dname):
 
 
 coder: Coder = None
-
 def init(argv=None, force_git_root=None):
     """
     Initialize the coder. Use the send_message_get_output function to send messages to the coder.
@@ -229,14 +231,22 @@ def init(argv=None, force_git_root=None):
         print("Dry run mode enabled. No files will be modified!")
 
     model = Model(model=args.model)
+    coders.__all__.append(UnityCoder)
+    print(args.edit_format)
     coder = Coder.create(
         main_model=model,
-        edit_format=args.edit_format,
+        edit_format="unity",
         fnames=fnames, 
         io=io, 
         dry_run=args.dry_run, # a dry run will cause it to not modify files
         stream=True,
         use_git=True)
+    
+    # calling this forces a repo map update at the start
+    print("Initializing coder...")
+    coder.format_messages()
+    print("Coder initialized.")
+
 
 def send_message_get_output(message):
     """

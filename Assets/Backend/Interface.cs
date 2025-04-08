@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Text.RegularExpressions;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public enum AiderCommand
@@ -117,37 +115,65 @@ public struct AiderRequest
     }
 }
 
-public struct AiderResponse
+public struct AiderResponseHeader
 {
-    public string Content { get; set; }
-    public bool Last { get; set; }
+    public static readonly int HeaderSize = 4 + 1 + 1 + 1; // contentLength + last + isDiff + isError
+    public int ContentLength { get; set; }
+    public bool IsLast { get; set; }
+    public bool IsDiff { get; set; }
     public bool IsError { get; set; }
 
-    public AiderResponse(string content, bool last, bool isError)
+    public AiderResponseHeader(int contentLength, bool last, bool isDiff = true, bool isError = false)
+    {
+        ContentLength = contentLength;
+        IsLast = last;
+        IsDiff = isDiff;
+        IsError = isError;
+    }
+
+    public static AiderResponseHeader Deserialize(byte[] data)
+    {
+        int pos = 0;
+        var contentLength = BitConverter.ToInt32(data, pos); pos += 4;
+        var last = BitConverter.ToBoolean(data, pos); pos += 1;
+        var isDiff = BitConverter.ToBoolean(data, pos); pos += 1;
+        var isError = BitConverter.ToBoolean(data, pos); pos += 1;
+
+        return new AiderResponseHeader(contentLength, last, isDiff, isError);
+    }
+}
+
+public struct AiderResponse
+{
+    public AiderResponseHeader Header { get; set; }
+    public string Content { get; set; }
+
+    public List<IAiderUnityCommand> Commands { get; private set; }
+
+    public AiderResponse(string content, AiderResponseHeader header)
     {
         Content = content;
-        Last = last;
-        IsError = isError;
+        Header = header;
+        Commands = AiderUnityControl.ParseCommands(content);
 
-        if (isError)
+        if (header.IsError)
         {
             Debug.LogError(content);
         }
     }
 
-    public static AiderResponse Deserialize(byte[] data)
+    public static AiderResponse Deserialize(byte[] data, AiderResponseHeader header)
     {
         int pos = 0;
-        var contentLength = BitConverter.ToInt32(data, pos); pos += 4;
+        var contentLength = header.ContentLength;
         var content = System.Text.Encoding.UTF8.GetString(data, pos, contentLength); pos += contentLength;
-        var last = BitConverter.ToBoolean(data, pos); pos += 1;
-        var error = BitConverter.ToBoolean(data, pos);
-        return new AiderResponse(content, last, error);
+
+        return new AiderResponse(content, header);
     }
 
     public static AiderResponse Error(string content)
     {
-        return new AiderResponse(content, true, true);
+        return new AiderResponse(content, new AiderResponseHeader{ IsError = true });
     }
 }
 

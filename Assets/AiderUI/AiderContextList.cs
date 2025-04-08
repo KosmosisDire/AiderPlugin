@@ -20,10 +20,10 @@ public class AiderContextList : VisualElement
             contextItem.AddToClassList("context-item");
             Add(contextItem);
 
-            var dropButton = new Button(() =>
+            var dropButton = new Button(async () =>
             {
-                Client.DropFile(item);
-                Update(Client.GetContextList());
+                await Client.DropFile(item);
+                Update(await Client.GetContextList());
             });
             dropButton.AddToClassList("context-drop-button");
             contextItem.Add(dropButton);

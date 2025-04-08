@@ -21,14 +21,15 @@ public class AiderChatWindow : EditorWindow
     public Button settingsButton;
     public Button historyButton;
     public Button newChatButton;
+    public TextField textField;
     public Button sendButton;
 
 
     public bool HistoryOpen => chatHistory != null && chatHistory.resolvedStyle.display == DisplayStyle.Flex;
 
-    private void OnEnable()
+    private async Task OnEnable()
     {
-        AiderRunner.EnsureAiderBridgeRunning();
+        await AiderRunner.EnsureAiderBridgeRunning();
     }
 
     [MenuItem("Aider/Chat Window")]
@@ -38,14 +39,14 @@ public class AiderChatWindow : EditorWindow
     }
 
 
-    private void CreateGUI()
+    private async Task CreateGUI()
     {
         VisualElement root = rootVisualElement;
         root.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Editor/AiderWindow.uss"));
         root.AddToClassList(EditorGUIUtility.isProSkin ? "dark-mode" : "light-mode");
         root.AddToClassList("aider-chat-window");
 
-        NewChat();
+        await NewChat();
 
         // history 
         chatHistory = new AiderChatHistory(this);
@@ -64,7 +65,7 @@ public class AiderChatWindow : EditorWindow
         footer.Add(inputWrapper);
 
         // make chat input
-        TextField textField = new()
+        textField = new()
         {
             multiline = true,
         };
@@ -72,17 +73,9 @@ public class AiderChatWindow : EditorWindow
         textField.SetPlaceholderText("How can I help you?");
         inputWrapper.Add(textField);
 
-        sendButton = new Button(() =>
+        sendButton = new Button(async () =>
         {
-            UnityEngine.Debug.Log($"Sending: {textField.value}");
-            var req = new AiderRequest(textField.value);
-            textField.value = "";
-            
-
-            Client.Send(req);
-            chatList.AddMessage(req.Content, true, "Empty Message");
-            chatList.AddMessage("", false, "Thinking...");
-            Client.AsyncReceive(HandleResponse);
+            await SendCurrentMessage();
         });
         sendButton.style.scale = new StyleScale(StyleKeyword.Null);
         sendButton.AddToClassList("send-button");
@@ -90,7 +83,7 @@ public class AiderChatWindow : EditorWindow
 
         // make context list
         contextList = new AiderContextList();
-        contextList.Update(Client.GetContextList());
+        contextList.Update(await Client.GetContextList());
         footer.Add(contextList);
 
         configWindow = new AiderConfigWindow();
@@ -142,15 +135,36 @@ public class AiderChatWindow : EditorWindow
         header.Add(historyButton);
 
         root.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
-        root.RegisterCallback<DragPerformEvent>(OnDragPerform);
+        root.RegisterCallback<DragPerformEvent>(async (evt) => await OnDragPerform(evt));
         
         // Add floating add chat button at the top right corner
-        newChatButton = new Button(NewChat);
+        newChatButton = new Button(async () => await NewChat());
         newChatButton.tooltip = "New Chat";
         newChatButton.AddToClassList("new-chat-button");
         header.Add(newChatButton);
 
         ShowChat();
+    }
+
+    public async Task SendCurrentMessage()
+    {
+        DisableSendButton();
+        var req = new AiderRequest(textField.value);
+        textField.value = "";
+        await Client.Send(req);
+        chatList.AddMessage(req.Content, true, "Empty Message");
+        chatList.AddMessage("", false, "Thinking...");
+        _ = Client.ReceiveAllResponesAsync(HandleResponse, TimeSpan.FromSeconds(10));
+    }
+
+    public void DisableSendButton()
+    {
+        // sendButton.SetEnabled(false);
+    }
+
+    public void EnableSendButton()
+    {
+        // sendButton.SetEnabled(true);
     }
 
     public void ReplaceChat(AiderChatList chat)
@@ -200,13 +214,13 @@ public class AiderChatWindow : EditorWindow
         configWindow.Hide();
     }
 
-    public void NewChat()
+    public async Task NewChat()
     {
         VisualElement root = rootVisualElement;
 
         // Clears Aider's context
-        Client.Reset();
-        contextList?.Update(Client.GetContextList());
+        await Client.Reset();
+        contextList?.Update(await Client.GetContextList());
 
         int index = 0;
         if (chatList != null)
@@ -235,7 +249,7 @@ public class AiderChatWindow : EditorWindow
         DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
     }
 
-    private void OnDragPerform(DragPerformEvent evt)
+    private async Task OnDragPerform(DragPerformEvent evt)
     {
         DragAndDrop.AcceptDrag();
 
@@ -243,26 +257,38 @@ public class AiderChatWindow : EditorWindow
         {
             if (File.Exists(path))
             {
-                Client.AddFile(path);
-                var context = Client.GetContextList();
+                await Client.AddFile(path);
+                var context = await Client.GetContextList();
                 contextList.Update(context);
                 Debug.Log($"Added {path} to the context");
             }
         }
     }
 
-    private void HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
+    private async Task HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
     {
-        Debug.Log("Response end");
+
         // reload assets in case a file was changed
         AssetDatabase.Refresh();
 
         // save chat to a file
         chatList.SerializeChat();
 
-        var context = Client.GetContextList();
-        Debug.Log(context);
+        var context = await Client.GetContextList();
         contextList.Update(context);
+
+        await Task.Delay(1000);
+        while (EditorApplication.isCompiling)
+        {
+            await Task.Delay(100);
+        }
+        await Task.Delay(100);
+
+        response.Commands.ForEach(cmd =>
+        {
+            cmd.Execute();
+        });
+        EnableSendButton();
     }
 
     private void HandleResponse(AiderResponse response)
@@ -270,12 +296,22 @@ public class AiderChatWindow : EditorWindow
         var current = chatList.Last();
         if (!current.isUser)
         {
-            current.AppendText(response.Content);
+            if (response.Header.IsError)
+            {
+                current.SetText(response.Content);
+                current.AddToClassList("error-message");
+                DisableSendButton();
+                return;
+            }
+
+            if (response.Header.IsDiff) current.AppendText(response.Content);
+            else current.SetText(response.Content);
+
             chatList.ScrollToBottom();
 
-            if (response.Last)
+            if (response.Header.IsLast)
             {
-                HandleResponseEnd(response, current);
+                _ = HandleResponseEnd(response, current);
             }
         }
         else

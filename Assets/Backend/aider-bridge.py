@@ -24,7 +24,8 @@ class Server:
         print(f"Connected on {self.addr}")
 
     def send(self, message: AiderResponse):
-        self.conn.sendall(message.serialize())
+        msg = message.serialize()
+        self.conn.sendall(msg)
 
     def send_string(self, string: str):
         self.send(AiderResponse(string, True))
@@ -36,6 +37,7 @@ class Server:
         words = string.split(" ")
         for i, word in enumerate(words):
             if i < len(words) - 1:
+                print(word + " ", end="", flush=True)
                 self.send(AiderResponse(word + " "))
                 time.sleep(random.uniform(0.01, 0.2))
             else:
@@ -65,6 +67,7 @@ def main():
 
             while True: # continue to listen for new messages
                 request = server.receive()
+                print(f"Received request: {request}")
 
                 if request is None:
                     break
@@ -123,12 +126,14 @@ def main():
                         coder.done_messages = []
                         coder.cur_messages = []
                         server.send_string("Reset chat successfully.")
-                        continue
+                        continue 
 
+                full_output = ""
                 for output in aider_main.send_message_get_output(request.content):
-                    server.send(AiderResponse(output))
+                    full_output += output
+                    server.send(AiderResponse(full_output, False, False))
 
-                server.send(AiderResponse("", True))
+                server.send(AiderResponse(full_output, True, False))
 
 if __name__ == "__main__":
     main()
