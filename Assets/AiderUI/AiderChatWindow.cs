@@ -3,27 +3,21 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using System.Diagnostics; //Added for process management
-using System.IO; //Added for file path operation
+using System.Diagnostics; // Added for process management
+using System.IO; // Added for file path operation
 using System.Threading;
 using Debug = UnityEngine.Debug;
-
+using System;
 public class AiderChatWindow : EditorWindow
 {
     public AiderChatList chatList;
     public AiderContextList contextList;
-
-    private string[] aiderCommands = {
-        "/ADD", "/ARCHITECT", "/ASK", "/CHAT_MODE", "/CLEAR", "/CODE",
-        "/COMMIT", "/DROP", "/LINT", "/LOAD", "/LS", "/MAP", "/MAP_REFRESH",
-        "/READ_ONLY", "/RESET", "/UNDO", "/WEB"
-    };
     private string selectedCommand = string.Empty;
-    private DropdownField commandDropdown;
+    private PopupField<string> commandDropdown;
 
     private void OnEnable()
     {
-        AiderRunner.EnsureAiderBridgeRunning();
+        AiderRunner.EnsureAiderBridgeRunning(); 
     }
 
     [MenuItem("Aider/Chat Window")]
@@ -54,12 +48,11 @@ public class AiderChatWindow : EditorWindow
         footer.Add(inputWrapper);
 
         // Dropdown menu for commands
-        commandDropdown = new DropdownField("Command", aiderCommands.ToList(), 0);
-        commandDropdown.RegisterValueChangedCallback(evt =>
-        {
-            selectedCommand = evt.newValue;
-        });
-        commandDropdown.style.width = 100;
+        commandDropdown = new PopupField<string>(Enum.GetNames(typeof(AiderCommand)).ToList(), 0);
+        commandDropdown.AddToClassList("dropdown-field");
+        commandDropdown.focusable = true;
+
+
         inputWrapper.Add(commandDropdown);
 
         // make chat input
@@ -71,6 +64,23 @@ public class AiderChatWindow : EditorWindow
         textField.SetPlaceholderText("How can I help you?");
         inputWrapper.Add(textField);
 
+
+        // Update dropdown in real-time as the user types
+        textField.RegisterValueChangedCallback(evt =>
+        {
+            string inputText = evt.newValue.Trim();
+            if (inputText.StartsWith("/"))
+            {
+               string typedCommand = inputText.Split(' ')[0].Substring(1);//removes "/"
+               if(Enum.TryParse(typeof(AiderCommand), typedCommand, true, out var result))
+                {
+                    selectedCommand = "/" + typedCommand.ToUpper();
+                    commandDropdown.value = typedCommand;
+                 }
+              }
+        });
+
+
         Button button = new Button(() =>
         {
             string inputText = textField.value.Trim();
@@ -78,19 +88,23 @@ public class AiderChatWindow : EditorWindow
             // Check if user typed a command at the beginning
             if (inputText.StartsWith("/"))
             {
-                string typedCommand = inputText.Split(' ')[0];
-                if (aiderCommands.Contains(typedCommand))
+                string typedCommand = inputText.Split(' ')[0].Substring(1); // removes "/"
+                if (Enum.TryParse(typeof(AiderCommand), typedCommand, true, out var result))
                 {
-                    selectedCommand = typedCommand;
+                    selectedCommand = "/" + typedCommand.ToUpper();
                     commandDropdown.value = typedCommand;
-                    inputText = inputText.Substring(typedCommand.Length).Trim();
+                    inputText = inputText.Substring(typedCommand.Length + 1).Trim();
                 }
             }
+            else
+            {
+                selectedCommand = "/" + commandDropdown.value.ToUpper();
+            }
 
-            // If there's no command, treat as a plain message
+            // if there's no command, treat as a plain message
             string messageToSend = string.IsNullOrEmpty(selectedCommand) ? inputText : $"{selectedCommand} {inputText}";
 
-            UnityEngine.Debug.Log($"Sending: {messageToSend}");
+            Debug.Log($"Sending: {messageToSend}");
             var req = new AiderRequest(messageToSend);
             textField.value = ""; 
             
@@ -159,7 +173,6 @@ public class AiderChatWindow : EditorWindow
         chatList.SerializeChat();
 
         var context = Client.GetContextList();
-        Debug.Log(context);
         contextList.Update(context);
 
         // after a delay reload again in case writing the file took some time
