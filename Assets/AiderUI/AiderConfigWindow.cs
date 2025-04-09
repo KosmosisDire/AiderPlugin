@@ -42,6 +42,7 @@ public class AiderConfigWindow : VisualElement
         ["gemini/gemini-1.5-flash"] = "Gemini 1.5 Flash",
         ["gemini/gemini-2.0-pro-exp-02-05"] = "Gemini 2.0 Pro",
         ["gemini/gemini-2.0-flash"] = "Gemini 2.0 Flash",
+        ["gemini/gemini-2.5-pro-preview-03-25"] = "Gemini 2.5 Pro",
         ["bedrock/anthropic.claude-3-sonnet-20240229-v1:0"] = "Claude 3 Sonnet (Bedrock)",
         ["bedrock/anthropic.claude-3-opus-20240229-v1:0"] = "Claude 3 Opus (Bedrock)",
         ["bedrock/anthropic.claude-3-haiku-20240307-v1:0"] = "Claude 3 Haiku (Bedrock)",

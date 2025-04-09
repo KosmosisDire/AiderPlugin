@@ -5,6 +5,19 @@ import time
 import aider_main
 from interface import AiderCommand, AiderRequest, AiderResponse
 
+reply = """
+I'll create a series of `executeCode` commands to test various Unity built-in types. Each command will be in its own block to help identify which types are accessible.
+
+```unity
+{
+    "command": "executeCode",
+    "shortDescription": "Testing basic Unity types",
+    "code": "Debug.Log(\"Testing execute!\");"
+}
+```
+
+"""
+
 class Server:
     def __init__(self):
         self.host = 'localhost'
@@ -128,12 +141,15 @@ def main():
                         server.send_string("Reset chat successfully.")
                         continue 
 
-                full_output = ""
-                for output in aider_main.send_message_get_output(request.content):
-                    full_output += output
-                    server.send(AiderResponse(full_output, False, False))
+                # full_output = ""
+                # for output in aider_main.send_message_get_output(request.content):
+                #     full_output += output
+                #     server.send(AiderResponse(full_output, False, False))
 
-                server.send(AiderResponse(full_output, True, False))
+                # server.send(AiderResponse(full_output, True, False))
+                
+                server.send(AiderResponse(reply, True, False))
+                print("Reply sent.")
 
 if __name__ == "__main__":
     main()

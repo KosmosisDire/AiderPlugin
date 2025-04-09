@@ -117,7 +117,7 @@ public struct AiderRequest
 
 public struct AiderResponseHeader
 {
-    public static readonly int HeaderSize = 4 + 1 + 1 + 1; // contentLength + last + isDiff + isError
+    public static readonly int HeaderSize = 4 + 4 + 1 + 1 + 1; // headerMarker + contentLength + last + isDiff + isError
     public int ContentLength { get; set; }
     public bool IsLast { get; set; }
     public bool IsDiff { get; set; }
@@ -134,6 +134,12 @@ public struct AiderResponseHeader
     public static AiderResponseHeader Deserialize(byte[] data)
     {
         int pos = 0;
+        var headerMarker = BitConverter.ToInt32(data, pos); pos += 4;
+        if (headerMarker != 123456789)
+        {
+            throw new Exception($"Invalid header marker: {headerMarker}. Expected 123456789.");
+        }
+
         var contentLength = BitConverter.ToInt32(data, pos); pos += 4;
         var last = BitConverter.ToBoolean(data, pos); pos += 1;
         var isDiff = BitConverter.ToBoolean(data, pos); pos += 1;
@@ -154,7 +160,7 @@ public struct AiderResponse
     {
         Content = content;
         Header = header;
-        Commands = AiderUnityControl.ParseCommands(content);
+        Commands = UnityJsonCommandParser.ParseCommands(content);
 
         if (header.IsError)
         {

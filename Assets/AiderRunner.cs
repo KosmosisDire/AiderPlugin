@@ -9,16 +9,33 @@ using Debug = UnityEngine.Debug;
 public class AiderRunner
 {
     static Process aiderBridge;
-    static Process aider;
 
     // Method to check if the bridge process is running, and restart it if necessary
-    public static async Task<bool> EnsureAiderBridgeRunning()
+    public static bool EnsureAiderBridgeRunning()
     {
         if (aiderBridge == null || aiderBridge.HasExited)
         {
+            // first try and refind process from editor prefs
+            int pid = EditorPrefs.GetInt("AiderBridgePID", -1);
+            if (pid != -1)
+            {
+                try
+                {
+                    aiderBridge = Process.GetProcessById(pid);
+                    if (!aiderBridge.HasExited)
+                    {
+                        Debug.Log("Found existing Aider Bridge process with PID: " + pid);
+                        return true;
+                    }
+                }
+                catch (Exception)
+                {
+                    // Process not found, will start a new one
+                }
+            }
+            
             Debug.Log("Aider Bridge is not running, starting it now.");
             aiderBridge = RunPython("Backend/aider-bridge.py");
-            await Task.Delay(1000); // Wait for the bridge to start
             return true;
         }
         return false;
@@ -40,13 +57,16 @@ public class AiderRunner
 
         pythonProcess.Start();
 
+        // save PID to editor prefs
+        EditorPrefs.SetInt("AiderBridgePID", pythonProcess.Id);
+
         return pythonProcess;
     }
 
     [MenuItem("Aider/Run Aider Bridge")]
-    public static async Task<Process> RunAiderBridge()
+    public static Process RunAiderBridge()
     {
-        return await EnsureAiderBridgeRunning() ? aiderBridge : null;
+        return EnsureAiderBridgeRunning() ? aiderBridge : null;
     }
 
     // Kill the Aider Bridge process
@@ -59,30 +79,4 @@ public class AiderRunner
         }
     }
 
-    // Start Aider process
-    [MenuItem("Aider/Run Aider")]
-    public static Process RunAider()
-    {
-        Process aiderProcess = new()
-        {
-            StartInfo = new ProcessStartInfo("aider")
-            {
-                UseShellExecute = true,
-                CreateNoWindow = false
-            }
-        };
-
-        aiderProcess.Start();
-
-        return aiderProcess;
-    }
-
-    [MenuItem("Aider/Kill Aider")]
-    public static void KillAider()
-    {
-        if (aider != null && !aider.HasExited)
-        {
-            aider.Kill();
-        }
-    }
 }

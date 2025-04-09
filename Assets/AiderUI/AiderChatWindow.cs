@@ -27,9 +27,9 @@ public class AiderChatWindow : EditorWindow
 
     public bool HistoryOpen => chatHistory != null && chatHistory.resolvedStyle.display == DisplayStyle.Flex;
 
-    private async Task OnEnable()
+    private void OnEnable()
     {
-        await AiderRunner.EnsureAiderBridgeRunning();
+        AiderRunner.EnsureAiderBridgeRunning();
     }
 
     [MenuItem("Aider/Chat Window")]
@@ -154,7 +154,7 @@ public class AiderChatWindow : EditorWindow
         await Client.Send(req);
         chatList.AddMessage(req.Content, true, "Empty Message");
         chatList.AddMessage("", false, "Thinking...");
-        _ = Client.ReceiveAllResponesAsync(HandleResponse, TimeSpan.FromSeconds(10));
+        _ = Client.ReceiveAllResponesAsync(HandleResponse);
     }
 
     public void DisableSendButton()
@@ -267,7 +267,6 @@ public class AiderChatWindow : EditorWindow
 
     private async Task HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
     {
-
         // reload assets in case a file was changed
         AssetDatabase.Refresh();
 

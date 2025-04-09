@@ -21,12 +21,24 @@ public class Client : Editor
     {
         try
         {
-            await AiderRunner.EnsureAiderBridgeRunning();
+            AiderRunner.EnsureAiderBridgeRunning();
             client = new();
-            client.Connect("localhost", 65234);
+            do 
+            {
+                try
+                {
+                    await client.ConnectAsync("localhost", 65234);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Trying to connect: {e.Message}");
+                    await Task.Delay(1000);
+                }
+            }
+            while (!client.Connected);
+
             stream = client.GetStream();
             Debug.Log("Connected to Aider Bridge.");
-            await Task.Delay(1000);
             return true;
         }
         catch (Exception e)
@@ -40,6 +52,7 @@ public class Client : Editor
 
     public static async Task<bool> Send(AiderRequest request)
     {
+        Debug.Log($"Sending request: {request.Content}");
         if (!IsConnected)
         {
             Debug.LogWarning("Not connected to bridge, trying to connect now...");
@@ -100,22 +113,17 @@ public class Client : Editor
         }
     }
 
-    private static async Task<AiderResponse> ReceiveSingleResponseAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+    private static async Task<AiderResponse> ReceiveSingleResponseAsync(CancellationToken cancellationToken = default)
     {
         if (!IsConnected)
         {
             return AiderResponse.Error("Not connected to bridge");
         }
 
-        // Combine cancellation with timeout
-        using var timeoutCts = new CancellationTokenSource(timeout);
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
-        var linkedToken = linkedCts.Token;
-
         byte[] headerBytes = new byte[AiderResponseHeader.HeaderSize];
         try
         {
-            await ReadExactlyAsync(stream, headerBytes, 0, AiderResponseHeader.HeaderSize, linkedToken);
+            await ReadExactlyAsync(stream, headerBytes, 0, AiderResponseHeader.HeaderSize, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -124,6 +132,7 @@ public class Client : Editor
 
         AiderResponseHeader header;
         header = AiderResponseHeader.Deserialize(headerBytes);
+        Debug.Log($"Received header: {header.ContentLength} bytes, last: {header.IsLast}, isDiff: {header.IsDiff}, isError: {header.IsError}");
 
         if (header.ContentLength == 0)
         {
@@ -141,7 +150,7 @@ public class Client : Editor
         byte[] contentBytes = new byte[header.ContentLength];
         try
         {
-            await ReadExactlyAsync(stream, contentBytes, 0, header.ContentLength, linkedToken);
+            await ReadExactlyAsync(stream, contentBytes, 0, header.ContentLength, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -150,15 +159,15 @@ public class Client : Editor
 
         string content = System.Text.Encoding.UTF8.GetString(contentBytes);
         var response = new AiderResponse(content, header);
-
+        Debug.Log($"Received response: {content}");
         return response;
     }
 
-    public static async Task ReceiveAllResponesAsync(Action<AiderResponse> callback, TimeSpan timeoutPerMessage, CancellationToken cancellationToken = default)
+    public static async Task ReceiveAllResponesAsync(Action<AiderResponse> callback,CancellationToken cancellationToken = default)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            AiderResponse response = await ReceiveSingleResponseAsync(timeoutPerMessage, cancellationToken);
+            AiderResponse response = await ReceiveSingleResponseAsync(cancellationToken);
             callback?.Invoke(response);
 
             if (response.Header.IsError || response.Header.IsLast)
@@ -182,7 +191,7 @@ public class Client : Editor
             return new string[0];
         }
 
-        var resp =  await ReceiveSingleResponseAsync(TimeSpan.FromSeconds(5));
+        var resp =  await ReceiveSingleResponseAsync();
         if (resp.Header.IsError)
         {
             return new string[0];
@@ -203,7 +212,7 @@ public class Client : Editor
             return false;
         }
 
-        var resp = await ReceiveSingleResponseAsync(TimeSpan.FromSeconds(5));
+        var resp = await ReceiveSingleResponseAsync();
         return !resp.Header.IsError;
     }
 
@@ -219,7 +228,7 @@ public class Client : Editor
             return false;
         }
 
-        var resp = await ReceiveSingleResponseAsync(TimeSpan.FromSeconds(5));
+        var resp = await ReceiveSingleResponseAsync();
         return !resp.Header.IsError;
     }
 
@@ -230,7 +239,7 @@ public class Client : Editor
             return false;
         }
         
-        var resp = await ReceiveSingleResponseAsync(TimeSpan.FromSeconds(5));
+        var resp = await ReceiveSingleResponseAsync();
         return !resp.Header.IsError;
     }
 
