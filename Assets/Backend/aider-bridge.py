@@ -10,9 +10,9 @@ I'll create a series of `executeCode` commands to test various Unity built-in ty
 
 ```unity
 {
-    "command": "executeCode",
-    "shortDescription": "Testing basic Unity types",
-    "code": "Debug.Log(\"Testing execute!\");"
+    "command": "executeCode", 
+    "shortDescription": "Testing basic Unity types", 
+    "code": "Debug.Log(\\"Testing execute!\\")"
 }
 ```
 
@@ -141,15 +141,15 @@ def main():
                         server.send_string("Reset chat successfully.")
                         continue 
 
-                # full_output = ""
-                # for output in aider_main.send_message_get_output(request.content):
-                #     full_output += output
-                #     server.send(AiderResponse(full_output, False, False))
+                full_output = ""
+                for output in aider_main.send_message_get_output(request.content):
+                    full_output += output
+                    server.send(AiderResponse(full_output, False, False))
 
-                # server.send(AiderResponse(full_output, True, False))
+                server.send(AiderResponse(full_output, True, False))
                 
-                server.send(AiderResponse(reply, True, False))
-                print("Reply sent.")
+                # server.send(AiderResponse(reply, True, False))
+                # print("Reply sent.")
 
 if __name__ == "__main__":
     main()

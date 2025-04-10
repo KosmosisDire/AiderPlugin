@@ -9,7 +9,7 @@
     --surface-color: rgb(20, 20, 20);
     --surface-color-muted: rgb(32, 32, 32);
     --bright-text-color: rgba(255, 255, 255, 0.95);
-    --muted-text-color: rgba(255, 255, 255, 0.2);
+    --muted-text-color: rgba(255, 255, 255, 0.3);
     --red-text-color: rgb(255, 107, 94);
     --background-color: rgb(43, 43, 43);
 }
@@ -42,9 +42,16 @@
     --empty-icon: url("/Assets/Editor/Lucide/bookmark-x.png");
     --unity-icon: url("/Assets/Editor/Lucide/unity.png");
     --trash-icon: url("/Assets/Editor/Lucide/trash-2.png");
+    --play-icon: url("/Assets/Editor/Lucide/play.png");
 }
 
 /* Layout Elements */
+.markdown-section
+{
+    flex-direction: column;
+    margin-bottom: 5px;
+}
+
 .chat-container
 {
     flex-shrink: 1;
@@ -439,6 +446,24 @@
     -unity-font-definition: url("JetBrainsMono.asset");
 }
 
+.language-label
+{
+    background-color: var(--surface-color-muted);
+    border-radius: 5px;
+    padding: 5px;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    opacity: 0.2;
+    transition: opacity 0.2s;
+}
+
+.language-label:hover
+{
+    opacity: 1;
+}
+
+
 .blockquote
 {
     background-color: var(--surface-color-muted);
@@ -497,4 +522,49 @@
 {
     background-color: var(--surface-color-muted);
     border-color: var(--muted-text-color);
+}
+
+/* Commands */
+
+.command-container
+{
+    background-color: var(--surface-color);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: var(--muted-text-color);
+    padding: 10px;
+    font-size: 14px;
+    -unity-font: url("JetBrainsMono.ttf");
+    -unity-font-definition: url("JetBrainsMono.asset");
+}
+
+.command-container *
+{
+    white-space: normal;
+}
+
+.command-container-invalid
+{
+    border-color: var(--red-text-color);
+    background-color: rgba(255, 107, 94, 0.1);
+    color: var(--red-text-color);
+}
+
+.command-title
+{
+    font-size: 14px;
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+}
+
+.command-execute-button
+{
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    width: 20px;
+    height: 20px;
+    background-image: var(--play-icon);
+    background-color: var(--surface-color);
+    background-size: 50%;
 }

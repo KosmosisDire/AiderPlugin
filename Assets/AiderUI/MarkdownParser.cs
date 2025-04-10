@@ -62,9 +62,15 @@ public class SelectableLabel : TextField
 
 public class CodeElement : SelectableLabel
 {
-    public CodeElement(string code) : base(code)
+    public CodeElement(CodeBlockInfo info) : base(info.code)
     {
         this.AddToClassList("code-block");
+        this.AddToClassList("code-block-" + info.language);
+
+        // add language indicator
+        var languageLabel = new Label(info.language);
+        languageLabel.AddToClassList("language-label");
+        Add(languageLabel);
     }
 }
 
@@ -75,6 +81,18 @@ public class BlockquoteElement : SelectableLabel
         this.AddToClassList("blockquote");
     }
 }
+
+public class Section
+{
+    public int startIndex;
+    public int endIndex;
+}
+public class CodeBlockInfo : Section
+{
+    public string code;
+    public string language;
+}
+
 
 public static class MarkdownParser
 {
@@ -151,69 +169,147 @@ public static class MarkdownParser
     public static void Parse(VisualElement parent, string markdown)
     {
         parent.Clear();
-        var codeSelector = new Regex(@"```.*?\n([\s\S]+?)```", RegexOptions.Multiline);
-        var tableSelector = new Regex(@"(\|.+\|\s+)+", RegexOptions.Multiline);
-        var blockQuoteSelector = new Regex(@"^([ \t]*?)> (.+)", RegexOptions.Multiline);
+        var codeSelector = new Regex(@"```(.*?)\n([\s\S]+?)```", RegexOptions.Multiline);
 
-        var codeBlocks = codeSelector.Matches(markdown).Select(match => new int2(match.Index, match.Index + match.Length)).ToList();
-        var tableBlocks = tableSelector.Matches(markdown).Select(match => new int2(match.Index, match.Index + match.Length)).ToList();
-        var blockQuotes = blockQuoteSelector.Matches(markdown).Select(match => new int2(match.Index, match.Index + match.Length)).ToList();
+        var sections = new List<Section>();
 
-        var allIndices = new List<int2>();
-        allIndices.AddRange(tableBlocks);
-        allIndices.AddRange(codeBlocks);
-        allIndices.AddRange(blockQuotes);
-        allIndices.Sort((a, b) => a.x.CompareTo(b.x));
-
-        // now generate a list of each section including the inbetweens
-        var sections = new List<int2>();
-        for (var i = 0; i < allIndices.Count; i++)
+        var codeBlockMatches = codeSelector.Matches(markdown);
+        foreach (Match match in codeBlockMatches)
         {
-            if (i == 0)
+            var codeBlock = new CodeBlockInfo
             {
-                sections.Add(new int2(0, allIndices[i].x));
-            }
-            else
-            {
-                sections.Add(new int2(allIndices[i - 1].y, allIndices[i].x));
-            }
+                startIndex = match.Index,
+                endIndex = match.Index + match.Length,
+                code = match.Groups[2].Value,
+                language = match.Groups[1].Value
+            };
+            sections.Add(codeBlock);
+        }
 
-            if (i == allIndices.Count - 1)
+        // generate inbetween sections
+        for (var i = 0; i < sections.Count; i++)
+        {
+            var section = sections[i];
+            if (i == 0 && section.startIndex > 0)
             {
-                sections.Add(new int2(allIndices[i].y, markdown.Length));
+                sections.Insert(i, new Section { startIndex = 0, endIndex = section.startIndex });
+                i++;
+            }
+            else if (i == sections.Count - 1 && section.endIndex < markdown.Length)
+            {
+                sections.Insert(i + 1, new Section { startIndex = section.endIndex, endIndex = markdown.Length });
+            }
+            else if (i < sections.Count - 1 && section.endIndex < sections[i + 1].startIndex)
+            {
+                sections.Insert(i + 1, new Section { startIndex = section.endIndex, endIndex = sections[i + 1].startIndex });
+                i++;
             }
         }
 
-        sections.AddRange(allIndices);
-        sections.Sort((a, b) => a.x.CompareTo(b.x));
-        sections = sections.Distinct().ToList();
-
+        // if there are no sections, add the whole string as a section
         if (sections.Count == 0)
         {
-            sections.Add(new int2(0, markdown.Length));
+            sections.Add(new Section { startIndex = 0, endIndex = markdown.Length });
         }
 
-        foreach (var section in sections)
+        var unityBlocks = UnityJsonCommandParser.ParseCommands(markdown);
+        Debug.Log($"Found {unityBlocks.Count} unity blocks in markdown {markdown}");
+
+        int unityBlockIndex = 0;
+        for (var i = 0; i < sections.Count; i++)
         {
-            var text = markdown.Substring(section.x, section.y - section.x);
+            var section = sections[i];
+            VisualElement element = null;
+            switch (section)
+            {
+                case CodeBlockInfo codeBlock:
+                    if (codeBlock.language == "unity")
+                    {
+                        var commandBlock = unityBlocks[unityBlockIndex];
+                        element = commandBlock.BuildUI();
+                        unityBlockIndex++;
+                        break;
+                    }
+                    element = new CodeElement(codeBlock);
+                    break;
+                case Section _:
+                    var text = markdown.Substring(section.startIndex, section.endIndex - section.startIndex);
+                    var parsed = ParseString(text).Trim();
+                    if (string.IsNullOrWhiteSpace(parsed)) break;
+                    element = new SelectableLabel(parsed);
+                    break;
+            }
 
-            if (tableBlocks.Contains(new int2(section.x, section.y)))
+            if (element != null)
             {
-                parent.Add(new TableElement(ParseTable(text)));
-            }
-            else if (codeBlocks.Contains(new int2(section.x, section.y)))
-            {
-                parent.Add(new CodeElement(text[3..^3]));
-            }
-            else if (blockQuotes.Contains(new int2(section.x, section.y)))
-            {
-                parent.Add(new BlockquoteElement(ParseString(text).Trim()[2..]));
-            }
-            else
-            {
-                parent.Add(new SelectableLabel(ParseString(text).Trim()));
+                element.AddToClassList("markdown-section");
+                parent.Add(element);
             }
         }
+
+
+        // var tableSelector = new Regex(@"(\|.+\|\s+)+", RegexOptions.Multiline);
+        // var blockQuoteSelector = new Regex(@"^([ \t]*?)> (.+)", RegexOptions.Multiline);
+
+        // var codeBlocks = codeSelector.Matches(markdown).Select(match => new int2(match.Index, match.Index + match.Length)).ToList();
+        // var tableBlocks = tableSelector.Matches(markdown).Select(match => new int2(match.Index, match.Index + match.Length)).ToList();
+        // var blockQuotes = blockQuoteSelector.Matches(markdown).Select(match => new int2(match.Index, match.Index + match.Length)).ToList();
+
+        // var allIndices = new List<Section>();
+        // allIndices.AddRange(tableBlocks);
+        // allIndices.AddRange(codeBlocks);
+        // allIndices.AddRange(blockQuotes);
+        // allIndices.Sort((a, b) => a.x.CompareTo(b.x));
+
+        // now generate a list of each section including the inbetweens
+        // var sections = new List<int2>();
+        // for (var i = 0; i < allIndices.Count; i++)
+        // {
+        //     if (i == 0)
+        //     {
+        //         sections.Add(new int2(0, allIndices[i].x));
+        //     }
+        //     else
+        //     {
+        //         sections.Add(new int2(allIndices[i - 1].y, allIndices[i].x));
+        //     }
+
+        //     if (i == allIndices.Count - 1)
+        //     {
+        //         sections.Add(new int2(allIndices[i].y, markdown.Length));
+        //     }
+        // }
+
+        // sections.AddRange(allIndices);
+        // sections.Sort((a, b) => a.x.CompareTo(b.x));
+        // sections = sections.Distinct().ToList();
+
+        // if (sections.Count == 0)
+        // {
+        //     sections.Add(new int2(0, markdown.Length));
+        // }
+
+        // foreach (var section in sections)
+        // {
+        //     var text = markdown.Substring(section.x, section.y - section.x);
+
+        //     if (tableBlocks.Contains(new int2(section.x, section.y)))
+        //     {
+        //         parent.Add(new TableElement(ParseTable(text)));
+        //     }
+        //     else if (codeBlocks.Contains(new int2(section.x, section.y)))
+        //     {
+        //         parent.Add(new CodeElement(text[3..^3]));
+        //     }
+        //     else if (blockQuotes.Contains(new int2(section.x, section.y)))
+        //     {
+        //         parent.Add(new BlockquoteElement(ParseString(text).Trim()[2..]));
+        //     }
+        //     else
+        //     {
+        //         parent.Add(new SelectableLabel(ParseString(text).Trim()));
+        //     }
+        // }
     }
 
     public static string[][] ParseTable(string tableString)

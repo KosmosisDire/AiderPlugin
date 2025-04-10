@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 [SerializableAttribute]
 public class AiderChatList : ScrollView, IEnumerable<AiderChatMessage>
 {
-    [SerializeField] private List<AiderChatMessage> chatList = new();
+    [SerializeField] public List<AiderChatMessage> chatList = new();
     [SerializeField] public string chatID;
     [SerializeField] public string chatTitle;
     [SerializeField] private string lastMessageTimeStr;

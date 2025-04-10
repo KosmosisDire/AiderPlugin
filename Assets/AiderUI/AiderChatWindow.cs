@@ -27,9 +27,9 @@ public class AiderChatWindow : EditorWindow
 
     public bool HistoryOpen => chatHistory != null && chatHistory.resolvedStyle.display == DisplayStyle.Flex;
 
-    private void OnEnable()
+    private async void OnEnable()
     {
-        AiderRunner.EnsureAiderBridgeRunning();
+        // await Client.ConnectToBridge();
     }
 
     [MenuItem("Aider/Chat Window")]
@@ -41,12 +41,44 @@ public class AiderChatWindow : EditorWindow
 
     private async Task CreateGUI()
     {
+        var currentChat = EditorPrefs.GetString("Aider-CurrentChat", "");
+        if (currentChat != "")
+        {
+            Debug.Log($"Loading chat {currentChat}");
+            chatList = new AiderChatList(currentChat, AiderChatHistory.ChatSavePath);
+            
+            if (EditorPrefs.GetBool("Aider-ExecuteOnLoad", false))
+            {
+                var commands = UnityJsonCommandParser.ParseCommands(chatList.chatList.Last().Message);
+
+                // wait for the editor to be idle
+                while (EditorApplication.isCompiling || EditorApplication.isUpdating)
+                {
+                    await Task.Delay(100);
+                }
+                await Task.Delay(1000);
+
+                foreach (var command in commands)
+                {
+                    command.Execute();
+                }
+
+                EditorPrefs.SetBool("Aider-ExecuteOnLoad", false);
+            }
+        }
+
+        await Client.ConnectToBridge();
+
         VisualElement root = rootVisualElement;
         root.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Editor/AiderWindow.uss"));
         root.AddToClassList(EditorGUIUtility.isProSkin ? "dark-mode" : "light-mode");
         root.AddToClassList("aider-chat-window");
-
-        await NewChat();
+        if (chatList != null) root.Add(chatList);
+        
+        if (currentChat == "")
+        {
+            await NewChat();
+        }
 
         // history 
         chatHistory = new AiderChatHistory(this);
@@ -83,7 +115,6 @@ public class AiderChatWindow : EditorWindow
 
         // make context list
         contextList = new AiderContextList();
-        contextList.Update(await Client.GetContextList());
         footer.Add(contextList);
 
         configWindow = new AiderConfigWindow();
@@ -143,7 +174,11 @@ public class AiderChatWindow : EditorWindow
         newChatButton.AddToClassList("new-chat-button");
         header.Add(newChatButton);
 
+        ReplaceChat(chatList);
         ShowChat();
+
+        contextList.Update(await Client.GetContextList());
+        
     }
 
     public async Task SendCurrentMessage()
@@ -267,27 +302,25 @@ public class AiderChatWindow : EditorWindow
 
     private async Task HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
     {
-        // reload assets in case a file was changed
-        AssetDatabase.Refresh();
-
         // save chat to a file
         chatList.SerializeChat();
+        EditorPrefs.SetString("Aider-CurrentChat", chatList.chatID);
 
         var context = await Client.GetContextList();
         contextList.Update(context);
 
-        await Task.Delay(1000);
-        while (EditorApplication.isCompiling)
+        if (response.HasFileChanges)
         {
-            await Task.Delay(100);
+            EditorPrefs.SetBool("Aider-ExecuteOnLoad", true);
+            AssetDatabase.Refresh();
         }
-        await Task.Delay(100);
-
-        response.Commands.ForEach(cmd =>
+        else
         {
-            cmd.Execute();
-        });
-        EnableSendButton();
+            foreach (var command in response.Commands)
+            {
+                command.Execute();
+            }
+        }
     }
 
     private void HandleResponse(AiderResponse response)

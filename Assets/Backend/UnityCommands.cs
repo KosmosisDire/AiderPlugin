@@ -1,28 +1,78 @@
 using System;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 public abstract class IAiderUnityCommand
 {
-    protected bool hasError;
-    protected string output;
-    
+
     protected abstract void ExecuteCommand();
     public void Execute()
     {
         try
         {
             ExecuteCommand();
-            output = "Command executed successfully.";
         }
         catch (Exception e)
         {
             Debug.LogError($"Error executing command: {e.Message}");
-            output = e.Message;
-            hasError = true;
         }
     }
-    public abstract void Draw(VisualElement container);
+
+    public abstract VisualElement BuildDisplay();
+
+    public VisualElement BuildUI()
+    {
+        var container = new VisualElement();
+        container.AddToClassList("command-container");
+        string[] SplitCamelCase(string source)
+        {
+            return Regex.Split(source, @"(?<!^)(?=[A-Z])");
+        }
+        var className = this.GetType().Name;
+        var splitName = SplitCamelCase(className);
+        var cssClass = string.Join("-", splitName).ToLower().Replace("-command", "");
+        container.AddToClassList("command-container-" + cssClass);
+
+        var titleName = string.Join(" ", splitName);
+        var titleLabel = new Label(titleName);
+        titleLabel.AddToClassList("command-title");
+        container.Add(titleLabel);
+
+        var commandView = BuildDisplay();
+        commandView.AddToClassList("command-view");
+        container.Add(commandView);
+
+        var executeButton = new Button(() =>
+        {
+            Execute();
+        });
+        executeButton.AddToClassList("command-execute-button");
+
+        return container;
+    }
+}
+
+public class InvalidCommand : IAiderUnityCommand
+{
+    public string errorMessage;
+
+    public InvalidCommand(string errorMessage)
+    {
+        this.errorMessage = errorMessage;
+    }
+
+    protected override void ExecuteCommand()
+    {
+        Debug.LogError($"Invalid command: {errorMessage}");
+    }
+
+    public override VisualElement BuildDisplay()
+    {
+        var container = new VisualElement();
+        container.Add(new Label(errorMessage));
+        return container;
+    }
 }
 
 // Add Object Command
@@ -46,7 +96,6 @@ public class AddObjectCommand : IAiderUnityCommand
         string tag = null,
         string layer = null)
     {
-        this.hasError = false;
         this.objectPath = objectPath;
         this.objectType = objectType;
         this.position = new float[] { position.x, position.y, position.z };
@@ -124,9 +173,11 @@ public class AddObjectCommand : IAiderUnityCommand
         }
     }
 
-    public override void Draw(VisualElement container)
+    public override VisualElement BuildDisplay()
     {
-        throw new NotImplementedException();
+        var container = new VisualElement();
+        container.Add(new Label($"Adding {objectPath} with type {objectType}"));
+        return container;
     }
 }
 
@@ -139,7 +190,6 @@ public class ExecuteCodeCommand : IAiderUnityCommand
 
     public ExecuteCodeCommand(string code, string shortDescription = null)
     {
-        this.hasError = false;
         this.shortDescription = shortDescription;
         this.code = code;
     }
@@ -158,9 +208,14 @@ public class ExecuteCodeCommand : IAiderUnityCommand
         }
     }
 
-    public override void Draw(VisualElement container)
+    public override VisualElement BuildDisplay()
     {
-        throw new NotImplementedException();
+        var container = new VisualElement();
+        if (!string.IsNullOrEmpty(shortDescription))
+        {
+            container.Add(new Label($"{MarkdownParser.ParseString(shortDescription)}"));
+        }
+        return container;
     }
 }
 

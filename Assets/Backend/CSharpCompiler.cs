@@ -33,12 +33,16 @@ public static class CSharpCompiler
         foreach (var assembly in assemblies)
         {
             if (!assembly.IsDynamic && !string.IsNullOrEmpty(assembly.Location) && (assembly.Location.Contains("UnityEngine.") ||
-                assembly.Location.Contains("UnityEditor.") || assembly.Location.Contains("mscorlib") || assembly.Location.Contains("netstandard")))
+                assembly.Location.Contains("UnityEditor.") || assembly.Location.Contains("mscorlib") || assembly.Location.Contains("netstandard")
+                || assembly.Location.Contains("Library\\ScriptAssemblies") || assembly.Location.Contains("Library/ScriptAssemblies")))
             {
                 options.ReferencedAssemblies.Add(assembly.Location);
                 Debug.Log($"Adding assembly reference: {assembly.Location}");
             }
         }
+
+        options.ReferencedAssemblies.Add(typeof(UnityEngine.Object).Assembly.Location);
+        options.ReferencedAssemblies.Add(typeof(UnityEditor.AssetDatabase).Assembly.Location);
 
         // Compile and execute
         using (var provider = new Microsoft.CSharp.CSharpCodeProvider())

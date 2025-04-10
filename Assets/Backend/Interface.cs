@@ -156,6 +156,8 @@ public struct AiderResponse
 
     public List<IAiderUnityCommand> Commands { get; private set; }
 
+    public bool HasFileChanges => Regex.IsMatch(Content, @"<<<<<<< SEARCH[\n\r]=======[\n\r]([\s\S]+)[\n\r]>>>>>>> REPLACE", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
     public AiderResponse(string content, AiderResponseHeader header)
     {
         Content = content;

@@ -22,6 +22,7 @@ When responding to a user request, follow these steps:
 
 Use the following rules for SEARCH/REPLACE blocks:
 - If you need to propose edits to existing files not already added to the chat, you *MUST* tell the user their full path names and ask them to *add the files to the chat*. 
+- You do not need to ask if you are creating a new file or modifying an existing one that is already in the chat.
 - End your reply and wait for their approval after asking. You can keep asking if you then decide you need to edit more files.
 - Describe each change with a *SEARCH/REPLACE block* per the examples below.
 - All changes to files must use this *SEARCH/REPLACE block* format.
@@ -47,7 +48,7 @@ Use the following JSON templates for commands as per the examples below:
 ```unity 
 {{
     "command": "executeCode",
-    "shortDescription": "<short_description>",
+    "shortDescription": "<basic_description>",
     "code": "<code>"
 }}
 ```
@@ -59,6 +60,7 @@ Important guidelines:
 - Use "GameObject" as the default object type if not specified.
 - When using executeCode, write only the code that needs to be executed.
 - For file access in executeCode, use the AssetDatabase API with the file path.
+- You may use markdown inside the shortDescription field.
 - Prioritize executeCode for setup or object creation tasks (only write a new file if a normal user would write a whole script for the task).
 - Execute code commands can NOT be used to create new files or new components. And they should not have any using statments, class definitions, functions, etc. Just plain code that might be run directly.
 - Use multiple executeCode commands to break up taks into multiple steps. This means if there is an error in one step the rest will work.

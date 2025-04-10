@@ -121,7 +121,7 @@ class UnityJsonCommandParser
             }
             catch (Exception e)
             {
-                Debug.LogError($"Error parsing command block: {e.Message}");
+                commands.Add(new InvalidCommand($"Error parsing command block: {e.Message}"));
             }
         }
 
