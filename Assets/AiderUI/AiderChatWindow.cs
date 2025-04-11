@@ -22,6 +22,7 @@ public class AiderChatWindow : EditorWindow
     public Button historyButton;
     public Button newChatButton;
     public Button sendButton;
+    public Label sessionCostLabel;
 
 
     public bool HistoryOpen => chatHistory != null && chatHistory.resolvedStyle.display == DisplayStyle.Flex;
@@ -122,6 +123,11 @@ public class AiderChatWindow : EditorWindow
         settingsButton.tooltip = "Settings";
         settingsButton.AddToClassList("settings-button");
         header.Add(settingsButton);
+        // add usage report label
+        sessionCostLabel = new Label();
+        sessionCostLabel.AddToClassList("session-cost-label");
+        //sessionCostLabel.tooltip = "Total session cost";
+        header.Add(sessionCostLabel);
 
         // add floating history button at top left corner of window
         historyButton = new Button();
@@ -263,6 +269,18 @@ public class AiderChatWindow : EditorWindow
         var context = Client.GetContextList();
         Debug.Log(context);
         contextList.Update(context);
+
+        if (!string.IsNullOrEmpty(response.UsageReport))
+        {
+
+            var userMsg = chatList[chatList.Count - 2];
+            // Updates the chat message label for cost/tokens
+            messageEl.SetMessageLabel(response.TokenCountReceived, response.CostMessage);
+            userMsg.SetMessageLabel(response.TokenCountSent);
+            // Updates the total session cost label
+            sessionCostLabel.text = $"Session cost: {response.CostSession}";
+           
+        }
     }
 
     private void HandleResponse(AiderResponse response)

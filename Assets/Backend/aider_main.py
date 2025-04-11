@@ -32,7 +32,6 @@ def get_git_root():
         return repo.working_tree_dir
     except (git.InvalidGitRepositoryError, FileNotFoundError):
         return None
-    
 
 def generate_search_path_list(default_file, git_root, command_line_file):
     files = []
