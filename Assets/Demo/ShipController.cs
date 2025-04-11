@@ -1,27 +1,69 @@
 using UnityEngine;
 
+// Add requirements for the new components
+[RequireComponent(typeof(HealthSystem))]
+[RequireComponent(typeof(ShootingSystem))]
 public class ShipController : MonoBehaviour
 {
     public float moveSpeed = 5.0f;
     public float rotationSpeed = 200.0f; // Degrees per second for smoothing (optional)
 
+    // --- Component References ---
     private Camera mainCamera;
+    private HealthSystem healthSystem;
+    private ShootingSystem shootingSystem;
+    // --- Public Fields ---
+    // You might want to expose these if needed, or keep them private
+    // public HealthSystem Health => healthSystem;
+    // public ShootingSystem Shooter => shootingSystem;
 
-    void Start()
+
+    void Awake() // Use Awake for getting components
     {
         mainCamera = Camera.main;
-        if (mainCamera == null)
+        healthSystem = GetComponent<HealthSystem>();
+        shootingSystem = GetComponent<ShootingSystem>();
+
+        // Ensure components are found
+        if (mainCamera == null) Debug.LogError("ShipController requires a MainCamera tagged GameObject.", this);
+        if (healthSystem == null) Debug.LogError("ShipController requires a HealthSystem component.", this);
+        if (shootingSystem == null) Debug.LogError("ShipController requires a ShootingSystem component.", this);
+
+        // Disable script if essential components are missing
+        if (mainCamera == null || healthSystem == null || shootingSystem == null)
         {
-            Debug.LogError("ShipController requires a MainCamera tagged GameObject in the scene.");
-            enabled = false; // Disable script if no camera found
+            enabled = false;
+            return;
         }
+
+        // Set the player's projectiles to target enemies
+        shootingSystem.SetProjectileTargetTag("Enemy"); // Make sure enemies have the "Enemy" tag
+
+        // Optional: Subscribe to health events if needed (e.g., game over screen)
+        // healthSystem.OnDied.AddListener(HandlePlayerDeath);
     }
+
 
     void Update()
     {
+        // Don't allow control if dead
+        if (healthSystem != null && healthSystem.IsDead)
+        {
+            // Optional: Add visual feedback for death (e.g., disable renderer)
+            return;
+        }
+
         HandleMovement();
         HandleRotation();
+        HandleShootingInput(); // Add shooting input handling
     }
+
+    // Optional: Method to handle player death
+    // void HandlePlayerDeath()
+    // {
+    //     Debug.Log("Player Died! Game Over?");
+    //     // Add game over logic here
+    // }
 
     void HandleMovement()
     {
@@ -73,5 +115,17 @@ public class ShipController : MonoBehaviour
         // float angle = Mathf.Atan2(directionToMouse.y, directionToMouse.x) * Mathf.Rad2Deg - 90f;
         // transform.rotation = Quaternion.Euler(0f, 0f, angle);
         // ------------------------------------
+    }
+
+    void HandleShootingInput()
+    {
+        // Check for left mouse button click (or hold)
+        if (Input.GetMouseButton(0)) // 0 is the left mouse button
+        {
+            if (shootingSystem != null)
+            {
+                shootingSystem.Shoot();
+            }
+        }
     }
 }
