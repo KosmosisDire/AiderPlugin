@@ -70,6 +70,5 @@ class AiderResponse:
         self.error = error
 
     def serialize(self) -> bytes:
-        print(len(self.content), self.last, self.is_diff, self.error, self.content)
         msg = struct.pack('<i', 123456789) + struct.pack('<i', len(self.content)) + struct.pack('<?', self.last) + struct.pack('<?', self.is_diff) + struct.pack('<?', self.error) + self.content.encode() 
         return msg

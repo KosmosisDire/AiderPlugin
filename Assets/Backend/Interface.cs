@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -156,10 +157,11 @@ public struct AiderResponse
 
     public List<IAiderUnityCommand> Commands { get; private set; }
 
-    public bool HasFileChanges => Regex.IsMatch(Content, @"<<<<<<< SEARCH[\n\r]=======[\n\r]([\s\S]+)[\n\r]>>>>>>> REPLACE", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+    public bool HasFileChanges => Regex.IsMatch(Content, @"<<<<<<< SEARCH[\n\r]([\s\S]*?)=======[\n\r]([\s\S]+?)[\n\r]>>>>>>> REPLACE", RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     public AiderResponse(string content, AiderResponseHeader header)
     {
+        
         Content = content;
         Header = header;
         Commands = UnityJsonCommandParser.ParseCommands(content);

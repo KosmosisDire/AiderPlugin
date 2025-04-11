@@ -178,7 +178,7 @@ public class AiderChatWindow : EditorWindow
         ShowChat();
 
         contextList.Update(await Client.GetContextList());
-        
+
     }
 
     public async Task SendCurrentMessage()
@@ -302,6 +302,8 @@ public class AiderChatWindow : EditorWindow
 
     private async Task HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
     {
+        await Task.Delay(1000);
+        
         // save chat to a file
         chatList.SerializeChat();
         EditorPrefs.SetString("Aider-CurrentChat", chatList.chatID);

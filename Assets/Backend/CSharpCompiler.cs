@@ -32,9 +32,7 @@ public static class CSharpCompiler
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
         foreach (var assembly in assemblies)
         {
-            if (!assembly.IsDynamic && !string.IsNullOrEmpty(assembly.Location) && (assembly.Location.Contains("UnityEngine.") ||
-                assembly.Location.Contains("UnityEditor.") || assembly.Location.Contains("mscorlib") || assembly.Location.Contains("netstandard")
-                || assembly.Location.Contains("Library\\ScriptAssemblies") || assembly.Location.Contains("Library/ScriptAssemblies")))
+            if (!assembly.IsDynamic && !string.IsNullOrEmpty(assembly.Location))
             {
                 options.ReferencedAssemblies.Add(assembly.Location);
                 Debug.Log($"Adding assembly reference: {assembly.Location}");
