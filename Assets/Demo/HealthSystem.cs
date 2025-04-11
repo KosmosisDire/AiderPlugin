@@ -24,6 +24,12 @@ public class HealthSystem : MonoBehaviour
     {
         // Invoke the event initially to set UI, etc.
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
+        // If this is the player, update the UI Manager's health bar initially
+        if (CompareTag("Player") && UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateHealth(currentHealth, maxHealth);
+        }
     }
 
     public void TakeDamage(int damageAmount)
@@ -37,6 +43,12 @@ public class HealthSystem : MonoBehaviour
 
         // Invoke the health changed event
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
+        // If this is the player, update the UI Manager's health bar
+        if (CompareTag("Player") && UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateHealth(currentHealth, maxHealth);
+        }
 
         if (IsDead)
         {
@@ -55,11 +67,23 @@ public class HealthSystem : MonoBehaviour
 
         // Invoke the health changed event
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
+        // If this is the player, update the UI Manager's health bar
+        if (CompareTag("Player") && UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateHealth(currentHealth, maxHealth);
+        }
     }
 
     private void Die()
     {
         Debug.Log($"{gameObject.name} has died.");
+
+        // If this is an enemy, notify the UI Manager to increase score
+        if (CompareTag("Enemy") && UIManager.Instance != null)
+        {
+            UIManager.Instance.EnemyDefeated();
+        }
         // Invoke the death event
         OnDied?.Invoke();
 
