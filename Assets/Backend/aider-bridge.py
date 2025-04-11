@@ -146,10 +146,7 @@ def main():
                     full_output += output
                     server.send(AiderResponse(full_output, False, False))
 
-                server.send(AiderResponse(full_output, True, False))
-                
-                # server.send(AiderResponse(reply, True, False))
-                # print("Reply sent.")
+                server.send(AiderResponse(full_output, True, False, usage_report=coder.usage_report))
 
 if __name__ == "__main__":
     main()

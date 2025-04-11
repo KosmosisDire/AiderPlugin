@@ -19,6 +19,7 @@ public class AiderChatMessage : VisualElement
     public readonly string placeholder; // show placeholder if the message in null or whitespace
     public TextField label;
     public Button copyButton;
+    public Label usageLabel;
 
     async void CopyToClipboard(bool showConfirm = true)
     {
@@ -29,6 +30,22 @@ public class AiderChatMessage : VisualElement
             await Task.Delay(1000);
             copyButton.RemoveFromClassList("confirm");
         }
+    }
+
+    public void SetMessageLabel(string tokens, string msgCost = "")
+    {
+        var content = tokens + " tokens";
+        usageLabel = new Label();
+        if (!isUser) {
+            usageLabel.tooltip = "Tokens received and message cost";
+            content += " • " + msgCost;
+        }
+        else {
+            usageLabel.tooltip = "Tokens sent including context";
+        }
+        usageLabel.AddToClassList("tokens-label");
+        usageLabel.text = content;
+        this.Add(usageLabel);
     }
 
     public AiderChatMessage(string message, bool isUser, string placeholder)

@@ -198,6 +198,7 @@
 .message-container
 {
     padding: 10px;
+    padding-bottom: 20px;
     border-radius: 5px;
     margin-bottom: 5px;
     border-width: 1px;
@@ -294,6 +295,15 @@
     background-image: var(--settings-icon);
 }
 
+.session-cost-label
+{ 
+    position: absolute;
+    left: 45px;
+    font-size: 14px;
+    color: var(--surface-col);
+    bottom: 10px;
+}
+
 .history-button
 {
     margin-right: 10px;
@@ -312,6 +322,26 @@
     width: 200px;
     max-width: 80%;
     align-self: center;
+}
+
+.message-container.is-ai .tokens-label
+{
+    font-size: 12px;
+    color: #888;
+    position: absolute;
+    bottom: 0;
+    right: 20px;
+    padding: 2px;
+}
+
+.message-container.is-user .tokens-label
+{
+    font-size: 12px;
+    color: #888;
+    position: absolute;
+    bottom: 0;
+    right: 5px;
+    padding: 2px;
 }
 
 .copy-button
