@@ -126,6 +126,7 @@ public class AiderChatWindow : EditorWindow
         // add usage report label
         sessionCostLabel = new Label();
         sessionCostLabel.AddToClassList("session-cost-label");
+        //sessionCostLabel.tooltip = "Total session cost";
         header.Add(sessionCostLabel);
 
         // add floating history button at top left corner of window

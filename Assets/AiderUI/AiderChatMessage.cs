@@ -35,9 +35,16 @@ public class AiderChatMessage : VisualElement
     public void SetMessageLabel(string tokens, string msgCost = "")
     {
         var content = tokens + " tokens";
-        if (!isUser) content += " • " + msgCost;
-        usageLabel = new Label(content);
+        usageLabel = new Label();
+        if (!isUser) {
+            usageLabel.tooltip = "Tokens received and message cost";
+            content += " • " + msgCost;
+        }
+        else {
+            usageLabel.tooltip = "Tokens sent including context";
+        }
         usageLabel.AddToClassList("tokens-label");
+        usageLabel.text = content;
         this.Add(usageLabel);
     }
 
