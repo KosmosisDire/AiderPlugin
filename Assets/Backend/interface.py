@@ -63,10 +63,11 @@ class AiderRequest:
         return content
     
 class AiderResponse:
-    def __init__(self, content: str, last: bool = False, error: bool = False):
+    def __init__(self, content: str, last: bool = False, error: bool = False, usage_report: str | None = ""):
         self.content = content
         self.last = last
         self.error = error
+        self.usage_report = usage_report
 
     def serialize(self) -> bytes:
-        return struct.pack('<i', len(self.content)) + self.content.encode() + struct.pack('<?', self.last) + struct.pack('<?', self.error)
+        return struct.pack('<i', len(self.content)) + self.content.encode() + struct.pack('<?', self.last) + struct.pack('<?', self.error) + struct.pack('<i', len(self.usage_report)) + self.usage_report.encode()

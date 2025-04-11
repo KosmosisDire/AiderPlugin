@@ -128,7 +128,7 @@ def main():
                 for output in aider_main.send_message_get_output(request.content):
                     server.send(AiderResponse(output))
 
-                server.send(AiderResponse("", True))
+                server.send(AiderResponse("", True, usage_report=coder.usage_report))
 
 if __name__ == "__main__":
     main()

@@ -22,6 +22,7 @@ public class AiderChatWindow : EditorWindow
     public Button historyButton;
     public Button newChatButton;
     public Button sendButton;
+    public Label sessionCostLabel;
 
 
     public bool HistoryOpen => chatHistory != null && chatHistory.resolvedStyle.display == DisplayStyle.Flex;
@@ -122,6 +123,10 @@ public class AiderChatWindow : EditorWindow
         settingsButton.tooltip = "Settings";
         settingsButton.AddToClassList("settings-button");
         header.Add(settingsButton);
+        // add usage report label
+        sessionCostLabel = new Label();
+        sessionCostLabel.AddToClassList("session-cost-label");
+        header.Add(sessionCostLabel);
 
         // add floating history button at top left corner of window
         historyButton = new Button();
@@ -263,6 +268,19 @@ public class AiderChatWindow : EditorWindow
         var context = Client.GetContextList();
         Debug.Log(context);
         contextList.Update(context);
+
+        if (!string.IsNullOrEmpty(response.UsageReport))
+        {
+            var (sent, received, costMsg, costSession) = ParseUsageReport(response.UsageReport);
+            var lastMsg = chatList.Last();
+            var userMsg = chatList[chatList.Count - 2];
+            // Updates the chat message label for cost/tokens
+            lastMsg.SetMessageLabel(sent, received, costMsg);
+            userMsg.SetMessageLabel(sent, received, costMsg);
+            // Updates the total session cost label
+            sessionCostLabel.text = $"Session cost: {costSession}";
+           
+        }
     }
 
     private void HandleResponse(AiderResponse response)
@@ -283,4 +301,43 @@ public class AiderChatWindow : EditorWindow
             Debug.LogError("Expected AI response, but got user response");
         }
     }
+
+// Parses out the 4 values from the usage report, no regex :D
+    private (string tokensSent, string tokensReceived, string costMessage, string costSession)
+    ParseUsageReport(string report)
+{
+    string tokensSent = "" ; 
+    string tokensReceived = "" ; 
+    string costMessage = "" ; 
+    string costSession = "" ;
+
+    try
+    {
+        var parts = report.Split(new[] { "Tokens:", "Cost:" }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2) return ("", "", "", "");
+
+        string tokenSection = parts[0].Trim().TrimEnd('.');
+        string costSection = parts[1].Trim().TrimEnd('.');
+
+        var tokenParts = tokenSection.Split(',');
+        if (tokenParts.Length >= 2)
+        {
+            tokensSent = tokenParts[0].Replace("sent", "").Trim();
+            tokensReceived = tokenParts[1].Replace("received", "").Trim();
+        }
+
+        var costParts = costSection.Split(',');
+        if (costParts.Length >= 2)
+        {
+            costMessage = costParts[0].Replace("message", "").Trim();
+            costSession = costParts[1].Replace("session", "").Trim();
+        }
+    }
+    catch (Exception ex)
+    {
+        Debug.LogWarning("Failed to parse usage report: " + ex.Message);
+    }
+
+    return (tokensSent, tokensReceived, costMessage, costSession);
+}
 }
