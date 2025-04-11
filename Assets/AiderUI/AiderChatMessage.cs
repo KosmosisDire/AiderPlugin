@@ -32,20 +32,24 @@ public class AiderChatMessage : VisualElement
         }
     }
 
-    public void SetMessageLabel(string tokens, string msgCost = "")
+    public void SetCostLabel(int tokens, float msgCost = 0)
     {
         var content = tokens + " tokens";
         usageLabel = new Label();
-        if (!isUser) {
-            usageLabel.tooltip = "Tokens received and message cost";
+        usageLabel.AddToClassList("tokens-label");
+        this.Add(usageLabel);
+
+        if (!isUser)
+        {
             content += " • " + msgCost;
+            usageLabel.tooltip = "Tokens received and message cost";
         }
-        else {
+        else
+        {
             usageLabel.tooltip = "Tokens sent including context";
         }
-        usageLabel.AddToClassList("tokens-label");
+
         usageLabel.text = content;
-        this.Add(usageLabel);
     }
 
     public AiderChatMessage(string message, bool isUser, string placeholder)

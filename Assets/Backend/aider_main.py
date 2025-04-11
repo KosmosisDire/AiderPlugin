@@ -12,6 +12,11 @@ from aider.repo import ANY_GIT_ERROR, GitRepo
 import aider.coders as coders
 from unity_coder import UnityCoder
 
+total_cost = 0.0
+message_cost = 0.0
+tokens_sent = 0
+tokens_received = 0
+
 def check_config_files_for_yes(config_files):
     found = False
     for config_file in config_files:
@@ -245,6 +250,20 @@ def init(argv=None, force_git_root=None):
     print("Initializing coder...")
     coder.format_messages()
     print("Coder initialized.")
+
+    # monkey patch function to extract the usage report before it is cleared
+    original_usage_report = coder.show_usage_report
+    def show_usage_report():
+        global total_cost, message_cost, tokens_sent, tokens_received
+        global coder
+        total_cost = coder.total_cost
+        message_cost = coder.message_cost
+        tokens_sent = coder.message_tokens_sent
+        tokens_received = coder.message_tokens_received
+
+        original_usage_report() # pass in coder because it needs the 'self' arg
+        
+    coder.show_usage_report = show_usage_report
 
 
 def send_message_get_output(message):

@@ -28,11 +28,6 @@ public class AiderChatWindow : EditorWindow
 
     public bool HistoryOpen => chatHistory != null && chatHistory.resolvedStyle.display == DisplayStyle.Flex;
 
-    private async void OnEnable()
-    {
-        // await Client.ConnectToBridge();
-    }
-
     [MenuItem("Aider/Chat Window")]
     public static void ShowWindow()
     {
@@ -317,17 +312,11 @@ public class AiderChatWindow : EditorWindow
         var context = await Client.GetContextList();
         contextList.Update(context);
 
-        if (!string.IsNullOrEmpty(response.UsageReport))
-        {
+        var userMsg = chatList[^2];
 
-            var userMsg = chatList[chatList.Count - 2];
-            // Updates the chat message label for cost/tokens
-            messageEl.SetMessageLabel(response.TokenCountReceived, response.CostMessage);
-            userMsg.SetMessageLabel(response.TokenCountSent);
-            // Updates the total session cost label
-            sessionCostLabel.text = $"Session cost: {response.CostSession}";
-           
-        }
+        userMsg.SetCostLabel(response.Header.TokensSent);
+        messageEl.SetCostLabel(response.Header.TokensReceived, response.Header.MessageCost);
+        sessionCostLabel.text = $"Session cost: {response.Header.SessionCost}";
 
         if (response.HasFileChanges)
         {

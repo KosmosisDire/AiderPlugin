@@ -132,7 +132,7 @@ public class Client : Editor
 
         AiderResponseHeader header;
         header = AiderResponseHeader.Deserialize(headerBytes);
-        Debug.Log($"Received header: {header.ContentLength} bytes, last: {header.IsLast}, isDiff: {header.IsDiff}, isError: {header.IsError}");
+        Debug.Log($"Received header: {header.ContentLength} bytes, last: {header.IsLast}, isDiff: {header.IsDiff}, isError: {header.IsError}, tokensSent: {header.TokensSent}, tokensReceived: {header.TokensReceived}, messageCost: {header.MessageCost}, sessionCost: {header.SessionCost}");
 
         if (header.ContentLength == 0)
         {

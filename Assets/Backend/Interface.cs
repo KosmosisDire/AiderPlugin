@@ -118,25 +118,21 @@ public struct AiderRequest
 
 public struct AiderResponseHeader
 {
-    public static readonly int HeaderSize = 4 + 4 + 1 + 1 + 1; // headerMarker + contentLength + last + isDiff + isError
+    public static readonly int HeaderSize = 4 + 4 + 1 + 1 + 1 + 4 + 4 + 4 + 4; // headerMarker + contentLength + last + isDiff + isError + tokensSent + tokensReceived + messageCost + sessionCost
     public int ContentLength { get; set; }
     public bool IsLast { get; set; }
     public bool IsDiff { get; set; }
     public bool IsError { get; set; }
-
-    public AiderResponseHeader(int contentLength, bool last, bool isDiff = true, bool isError = false)
-    {
-        ContentLength = contentLength;
-        IsLast = last;
-        IsDiff = isDiff;
-        IsError = isError;
-    }
+    public int TokensSent { get; set; }
+    public int TokensReceived { get; set; }
+    public float MessageCost { get; set; }
+    public float SessionCost { get; set; }
 
     public static AiderResponseHeader Deserialize(byte[] data)
     {
         int pos = 0;
         var headerMarker = BitConverter.ToInt32(data, pos); pos += 4;
-        if (headerMarker != 123456789)
+        if (headerMarker != 123456789) // this checks if the header starts with a specific number so we know we are reading the correct data. If it is not then somehow we are not reading correct data here.
         {
             throw new Exception($"Invalid header marker: {headerMarker}. Expected 123456789.");
         }
@@ -145,8 +141,22 @@ public struct AiderResponseHeader
         var last = BitConverter.ToBoolean(data, pos); pos += 1;
         var isDiff = BitConverter.ToBoolean(data, pos); pos += 1;
         var isError = BitConverter.ToBoolean(data, pos); pos += 1;
+        var tokensSent = BitConverter.ToInt32(data, pos); pos += 4;
+        var tokensReceived = BitConverter.ToInt32(data, pos); pos += 4;
+        var messageCost = BitConverter.ToSingle(data, pos); pos += 4;
+        var sessionCost = BitConverter.ToSingle(data, pos); pos += 4;
 
-        return new AiderResponseHeader(contentLength, last, isDiff, isError);
+        return new AiderResponseHeader
+        {
+            ContentLength = contentLength,
+            IsLast = last,
+            IsDiff = isDiff,
+            IsError = isError,
+            TokensSent = tokensSent,
+            TokensReceived = tokensReceived,
+            MessageCost = messageCost,
+            SessionCost = sessionCost
+        };
     }
 }
 

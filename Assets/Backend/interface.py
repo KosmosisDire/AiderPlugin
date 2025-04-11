@@ -63,12 +63,16 @@ class AiderRequest:
         return content
     
 class AiderResponse:
-    def __init__(self, content: str, last: bool = False, is_diff: bool = True, error: bool = False):
+    def __init__(self, content: str, last: bool, is_diff: bool = False, error: bool = False, tokensSent: int = 0, tokensReceived: int = 0, messageCost: float = 0, sessionCost: float = 0):
         self.content = content
         self.last = last
         self.is_diff = is_diff
         self.error = error
+        self.tokensSent = tokensSent
+        self.tokensReceived = tokensReceived
+        self.messageCost = messageCost
+        self.sessionCost = sessionCost
 
     def serialize(self) -> bytes:
-        msg = struct.pack('<i', 123456789) + struct.pack('<i', len(self.content)) + struct.pack('<?', self.last) + struct.pack('<?', self.is_diff) + struct.pack('<?', self.error) + self.content.encode() 
+        msg = struct.pack('<i', 123456789) + struct.pack('<i', len(self.content)) + struct.pack('<?', self.last) + struct.pack('<?', self.is_diff) + struct.pack('<?', self.error) + struct.pack('<i', self.tokensSent) + struct.pack('<i', self.tokensReceived) + struct.pack('<f', self.messageCost) + struct.pack('<f', self.sessionCost) + self.content.encode()
         return msg

@@ -144,9 +144,11 @@ def main():
                 full_output = ""
                 for output in aider_main.send_message_get_output(request.content):
                     full_output += output
-                    server.send(AiderResponse(full_output, False, False))
+                    server.send(AiderResponse(full_output, False))
 
-                server.send(AiderResponse(full_output, True, False, usage_report=coder.usage_report))
+                print(f"Tokens sent: {aider_main.tokens_sent}, Tokens received: {aider_main.tokens_received}, Message cost: {aider_main.message_cost}, Session cost: {aider_main.total_cost}")
+                
+                server.send(AiderResponse(full_output, True, False, False, aider_main.tokens_sent, aider_main.tokens_received, aider_main.message_cost, aider_main.total_cost))
 
 if __name__ == "__main__":
     main()
