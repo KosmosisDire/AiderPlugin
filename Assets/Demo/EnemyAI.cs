@@ -56,7 +56,7 @@ public class EnemyAI : MonoBehaviour
         if (playerTransform == null || healthSystem.IsDead)
         {
             // Stop moving if player is gone or enemy is dead
-            rb.velocity = Vector2.zero;
+            rb.linearVelocity = Vector2.zero;
             return;
         }
 
@@ -93,7 +93,7 @@ public class EnemyAI : MonoBehaviour
         // Else: Stay at the desired distance (moveDirection remains zero)
 
         // Apply velocity directly (alternative: use rb.AddForce)
-        rb.velocity = moveDirection * moveSpeed;
+        rb.linearVelocity = moveDirection * moveSpeed;
     }
 
     void HandleShooting()
