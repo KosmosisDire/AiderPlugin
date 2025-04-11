@@ -271,14 +271,13 @@ public class AiderChatWindow : EditorWindow
 
         if (!string.IsNullOrEmpty(response.UsageReport))
         {
-            var (sent, received, costMsg, costSession) = ParseUsageReport(response.UsageReport);
-            var lastMsg = chatList.Last();
+
             var userMsg = chatList[chatList.Count - 2];
             // Updates the chat message label for cost/tokens
-            lastMsg.SetMessageLabel(sent, received, costMsg);
-            userMsg.SetMessageLabel(sent, received, costMsg);
+            messageEl.SetMessageLabel(response.TokenCountReceived, response.CostMessage);
+            userMsg.SetMessageLabel(response.TokenCountSent);
             // Updates the total session cost label
-            sessionCostLabel.text = $"Session cost: {costSession}";
+            sessionCostLabel.text = $"Session cost: {response.CostSession}";
            
         }
     }
@@ -301,43 +300,4 @@ public class AiderChatWindow : EditorWindow
             Debug.LogError("Expected AI response, but got user response");
         }
     }
-
-// Parses out the 4 values from the usage report, no regex :D
-    private (string tokensSent, string tokensReceived, string costMessage, string costSession)
-    ParseUsageReport(string report)
-{
-    string tokensSent = "" ; 
-    string tokensReceived = "" ; 
-    string costMessage = "" ; 
-    string costSession = "" ;
-
-    try
-    {
-        var parts = report.Split(new[] { "Tokens:", "Cost:" }, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 2) return ("", "", "", "");
-
-        string tokenSection = parts[0].Trim().TrimEnd('.');
-        string costSection = parts[1].Trim().TrimEnd('.');
-
-        var tokenParts = tokenSection.Split(',');
-        if (tokenParts.Length >= 2)
-        {
-            tokensSent = tokenParts[0].Replace("sent", "").Trim();
-            tokensReceived = tokenParts[1].Replace("received", "").Trim();
-        }
-
-        var costParts = costSection.Split(',');
-        if (costParts.Length >= 2)
-        {
-            costMessage = costParts[0].Replace("message", "").Trim();
-            costSession = costParts[1].Replace("session", "").Trim();
-        }
-    }
-    catch (Exception ex)
-    {
-        Debug.LogWarning("Failed to parse usage report: " + ex.Message);
-    }
-
-    return (tokensSent, tokensReceived, costMessage, costSession);
-}
 }

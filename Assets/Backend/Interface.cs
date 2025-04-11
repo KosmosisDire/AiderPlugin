@@ -123,6 +123,11 @@ public struct AiderResponse
     public bool Last { get; set; }
     public bool IsError { get; set; }
     public string UsageReport { get; set; }
+    private string[] ParsedDataGroups => Regex.Match(UsageReport, @"^.+? +(\d.+?) .+?(\d.+?) .+?(\p{Sc}[\d\.\,]+?) .+?(\p{Sc}[\d\.\,]+?) .+").Groups.Select(g => g.Value).ToArray();
+    public string TokenCountSent => ParsedDataGroups.Length > 1 ? ParsedDataGroups[1] : "0";
+    public string TokenCountReceived => ParsedDataGroups.Length > 2 ? ParsedDataGroups[2] : "0";
+    public string CostMessage => ParsedDataGroups.Length > 3 ? ParsedDataGroups[3] : "0";
+    public string CostSession => ParsedDataGroups.Length > 4 ? ParsedDataGroups[4] : "0";
 
     public AiderResponse(string content, bool last, bool isError, string usageReport)
     {
