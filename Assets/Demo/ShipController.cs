@@ -3,12 +3,20 @@ using UnityEngine;
 // Add requirements for the new components
 [RequireComponent(typeof(HealthSystem))]
 [RequireComponent(typeof(ShootingSystem))]
+[RequireComponent(typeof(Rigidbody2D))] // <<< Add Rigidbody2D requirement
 public class ShipController : MonoBehaviour
 {
-    public float moveSpeed = 5.0f;
-    public float rotationSpeed = 200.0f; // Degrees per second for smoothing (optional)
+    [Header("Movement")]
+    [SerializeField] private float accelerationForce = 10.0f; // Force applied for movement
+    [SerializeField] private float maxSpeed = 7.0f;         // Maximum velocity magnitude
+    [SerializeField] private float linearDrag = 1.0f;       // Drag when moving straight
+    [SerializeField] private float angularDrag = 2.0f;      // Drag for rotation (helps stabilize)
+
+    [Header("Rotation")]
+    [SerializeField] private float rotationSpeed = 360.0f; // Degrees per second for smoothing
 
     // --- Component References ---
+    private Rigidbody2D rb; // <<< Add Rigidbody2D reference
     private Camera mainCamera;
     private HealthSystem healthSystem;
     private ShootingSystem shootingSystem;
@@ -21,20 +29,27 @@ public class ShipController : MonoBehaviour
     void Awake() // Use Awake for getting components
     {
         mainCamera = Camera.main;
+        rb = GetComponent<Rigidbody2D>(); // <<< Get Rigidbody2D component
         healthSystem = GetComponent<HealthSystem>();
         shootingSystem = GetComponent<ShootingSystem>();
 
         // Ensure components are found
         if (mainCamera == null) Debug.LogError("ShipController requires a MainCamera tagged GameObject.", this);
+        if (rb == null) Debug.LogError("ShipController requires a Rigidbody2D component.", this); // <<< Check Rigidbody2D
         if (healthSystem == null) Debug.LogError("ShipController requires a HealthSystem component.", this);
         if (shootingSystem == null) Debug.LogError("ShipController requires a ShootingSystem component.", this);
 
         // Disable script if essential components are missing
-        if (mainCamera == null || healthSystem == null || shootingSystem == null)
+        if (mainCamera == null || rb == null || healthSystem == null || shootingSystem == null) // <<< Add rb check
         {
             enabled = false;
             return;
         }
+
+        // Configure Rigidbody2D
+        rb.gravityScale = 0; // Ensure no gravity in 2D space game
+        rb.drag = linearDrag;
+        rb.angularDrag = angularDrag;
 
         // Set the player's projectiles to target enemies
         shootingSystem.SetProjectileTargetTag("Enemy"); // Make sure enemies have the "Enemy" tag
@@ -71,12 +86,20 @@ public class ShipController : MonoBehaviour
         float moveHorizontal = Input.GetAxis("Horizontal"); // A/D or Left/Right Arrows
         float moveVertical = Input.GetAxis("Vertical");   // W/S or Up/Down Arrows
 
-        // Calculate movement vector
-        Vector3 movement = new Vector3(moveHorizontal, moveVertical, 0f);
+        // Calculate movement direction vector
+        Vector2 moveDirection = new Vector2(moveHorizontal, moveVertical).normalized;
 
-        // Apply movement
-        // Normalize to prevent faster diagonal movement, then scale by speed and time
-        transform.position += movement.normalized * moveSpeed * Time.deltaTime;
+        // Apply force in the direction of input
+        if (moveDirection != Vector2.zero)
+        {
+            rb.AddForce(moveDirection * accelerationForce);
+        }
+
+        // Clamp velocity to maxSpeed
+        if (rb.velocity.magnitude > maxSpeed)
+        {
+            rb.velocity = rb.velocity.normalized * maxSpeed;
+        }
     }
 
     void HandleRotation()

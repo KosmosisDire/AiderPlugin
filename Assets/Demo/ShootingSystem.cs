@@ -4,10 +4,11 @@ public class ShootingSystem : MonoBehaviour
 {
     [SerializeField] private GameObject projectilePrefab; // Assign your projectile prefab here
     [SerializeField] private Transform firePoint;       // Assign a child GameObject representing the muzzle
-    [SerializeField] private float fireRate = 0.5f;     // Shots per second (e.g., 0.5f = 2 shots/sec)
+    [Tooltip("Number of shots fired per second.")]
+    [SerializeField] private float fireRate = 2.0f;     // Shots per second (e.g., 2 = 2 shots/sec = 0.5s delay)
     [SerializeField] private string projectileTargetTag = "Enemy"; // Default target tag for projectiles
 
-    private float nextFireTime = 0f;
+    private float nextFireTime = 0f; // Timestamp when the system can fire again
 
     // Property to check if ready to fire
     public bool CanShoot => Time.time >= nextFireTime;

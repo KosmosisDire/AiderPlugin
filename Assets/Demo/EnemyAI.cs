@@ -10,7 +10,10 @@ public class EnemyAI : MonoBehaviour
     private Transform playerTransform;
 
     [Header("Movement")]
-    [SerializeField] private float moveSpeed = 3.0f;
+    [SerializeField] private float accelerationForce = 8.0f; // Force applied for movement
+    [SerializeField] private float maxSpeed = 5.0f;         // Maximum velocity magnitude
+    [SerializeField] private float linearDrag = 1.0f;       // Drag when moving straight
+    [SerializeField] private float angularDrag = 2.0f;      // Drag for rotation
     [SerializeField] private float rotationSpeed = 180.0f; // Degrees per second
     [SerializeField] private float stoppingDistance = 5.0f; // How close to get to the player
     [SerializeField] private float retreatDistance = 3.0f; // If closer than this, back away
@@ -29,7 +32,11 @@ public class EnemyAI : MonoBehaviour
         shootingSystem = GetComponent<ShootingSystem>();
         healthSystem = GetComponent<HealthSystem>(); // Get reference if needed
 
-        // Ensure physics doesn't rotate the enemy based on collisions
+        // Configure Rigidbody2D
+        rb.gravityScale = 0;
+        rb.drag = linearDrag;
+        rb.angularDrag = angularDrag;
+        // We handle rotation manually, but keep freezeRotation in case of physics glitches
         rb.freezeRotation = true;
     }
 
@@ -92,8 +99,23 @@ public class EnemyAI : MonoBehaviour
         }
         // Else: Stay at the desired distance (moveDirection remains zero)
 
-        // Apply velocity directly (alternative: use rb.AddForce)
-        rb.linearVelocity = moveDirection * moveSpeed;
+        // Apply force for movement
+        if (moveDirection != Vector2.zero)
+        {
+            rb.AddForce(moveDirection * accelerationForce);
+        }
+
+        // Clamp velocity to maxSpeed
+        if (rb.velocity.magnitude > maxSpeed)
+        {
+            rb.velocity = rb.velocity.normalized * maxSpeed;
+        }
+        // If within stopping distance and not retreating, gradually reduce velocity
+        else if (moveDirection == Vector2.zero && rb.velocity.magnitude > 0.1f)
+        {
+            // Rely on drag, or optionally add counter-force for faster stops
+            // rb.AddForce(-rb.velocity.normalized * accelerationForce * 0.5f); // Example counter-force
+        }
     }
 
     void HandleShooting()
