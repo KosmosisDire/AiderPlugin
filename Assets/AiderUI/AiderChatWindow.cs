@@ -24,7 +24,6 @@ public class AiderChatWindow : EditorWindow
     public Button sendButton;
     public Label sessionCostLabel;
 
-
     public bool HistoryOpen => chatHistory != null && chatHistory.resolvedStyle.display == DisplayStyle.Flex;
 
     private void OnEnable()
@@ -69,22 +68,24 @@ public class AiderChatWindow : EditorWindow
         {
             multiline = true,
         };
+
+        textField.RegisterCallback<KeyDownEvent>(evt =>
+        {
+            if (evt.keyCode == KeyCode.Return && !evt.shiftKey)
+            {
+                SendChatMessage(textField);
+            }
+        });
+
         textField.AddToClassList("chat-input");
         textField.SetPlaceholderText("How can I help you?");
         inputWrapper.Add(textField);
 
         sendButton = new Button(() =>
         {
-            UnityEngine.Debug.Log($"Sending: {textField.value}");
-            var req = new AiderRequest(textField.value);
-            textField.value = "";
-            
-
-            Client.Send(req);
-            chatList.AddMessage(req.Content, true, "Empty Message");
-            chatList.AddMessage("", false, "Thinking...");
-            Client.AsyncReceive(HandleResponse);
+            SendChatMessage(textField);
         });
+
         sendButton.style.scale = new StyleScale(StyleKeyword.Null);
         sendButton.AddToClassList("send-button");
         inputWrapper.Add(sendButton);
@@ -131,7 +132,7 @@ public class AiderChatWindow : EditorWindow
 
         // add floating history button at top left corner of window
         historyButton = new Button();
-        historyButton.clickable.clicked += () => 
+        historyButton.clickable.clicked += () =>
         {
             if (HistoryOpen)
             {
@@ -149,7 +150,7 @@ public class AiderChatWindow : EditorWindow
 
         root.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
         root.RegisterCallback<DragPerformEvent>(OnDragPerform);
-        
+
         // Add floating add chat button at the top right corner
         newChatButton = new Button(NewChat);
         newChatButton.tooltip = "New Chat";
@@ -235,6 +236,19 @@ public class AiderChatWindow : EditorWindow
 
         ShowChat();
     }
+    private void SendChatMessage(TextField textField)
+    {
+        UnityEngine.Debug.Log($"Sending: {textField.value}");
+        var req = new AiderRequest(textField.value);
+        textField.value = "";
+
+
+        Client.Send(req);
+        chatList.AddMessage(req.Content, true, "Empty Message");
+        chatList.AddMessage("", false, "Thinking...");
+        Client.AsyncReceive(HandleResponse);
+
+    }
 
     private void OnDragUpdated(DragUpdatedEvent evt)
     {
@@ -279,7 +293,6 @@ public class AiderChatWindow : EditorWindow
             userMsg.SetMessageLabel(response.TokenCountSent);
             // Updates the total session cost label
             sessionCostLabel.text = $"Session cost: {response.CostSession}";
-           
         }
     }
 
