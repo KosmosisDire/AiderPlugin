@@ -1,14 +1,10 @@
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using System.Diagnostics; //Added for process management
-using System.IO; //Added for file path operation
-using System.Threading;
+using System.IO; 
 using Debug = UnityEngine.Debug;
 using System;
-
 
 public class AiderChatWindow : EditorWindow
 {
@@ -23,6 +19,7 @@ public class AiderChatWindow : EditorWindow
     public Button newChatButton;
     public Button sendButton;
     public Label sessionCostLabel;
+    private bool isStreaming = false;
 
     public bool HistoryOpen => chatHistory != null && chatHistory.resolvedStyle.display == DisplayStyle.Flex;
 
@@ -71,12 +68,25 @@ public class AiderChatWindow : EditorWindow
 
         textField.RegisterCallback<KeyDownEvent>(evt =>
         {
-            if (evt.keyCode == KeyCode.Return && !evt.shiftKey)
+            if (evt.keyCode == KeyCode.Return && !evt.shiftKey && !string.IsNullOrWhiteSpace(textField.value) && !isStreaming)
             {
                 SendChatMessage(textField);
             }
         });
 
+        textField.RegisterValueChangedCallback(evt =>
+        {
+            if (string.IsNullOrWhiteSpace(evt.newValue))
+            {
+                sendButton.SetEnabled(false);
+            }
+            else if (!isStreaming)
+            {
+                sendButton.SetEnabled(true);
+            }
+        });
+
+        textField.name = "chat-input";
         textField.AddToClassList("chat-input");
         textField.SetPlaceholderText("How can I help you?");
         inputWrapper.Add(textField);
@@ -85,7 +95,7 @@ public class AiderChatWindow : EditorWindow
         {
             SendChatMessage(textField);
         });
-
+        sendButton.SetEnabled(false);
         sendButton.style.scale = new StyleScale(StyleKeyword.Null);
         sendButton.AddToClassList("send-button");
         inputWrapper.Add(sendButton);
@@ -238,10 +248,12 @@ public class AiderChatWindow : EditorWindow
     }
     private void SendChatMessage(TextField textField)
     {
-        UnityEngine.Debug.Log($"Sending: {textField.value}");
+        isStreaming = true;
+        sendButton.SetEnabled(false);
+        Debug.Log($"Sending: {textField.value}");
+
         var req = new AiderRequest(textField.value);
         textField.value = "";
-
 
         Client.Send(req);
         chatList.AddMessage(req.Content, true, "Empty Message");
@@ -274,6 +286,9 @@ public class AiderChatWindow : EditorWindow
     private void HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
     {
         Debug.Log("Response end");
+        isStreaming = false;
+        var textField = rootVisualElement.Q<TextField>("chat-input");
+        sendButton.SetEnabled(!string.IsNullOrWhiteSpace(textField?.value));
         // reload assets in case a file was changed
         AssetDatabase.Refresh();
 
