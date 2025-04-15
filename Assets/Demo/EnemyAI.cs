@@ -34,8 +34,8 @@ public class EnemyAI : MonoBehaviour
 
         // Configure Rigidbody2D
         rb.gravityScale = 0;
-        rb.drag = linearDrag;
-        rb.angularDrag = angularDrag;
+        rb.linearDamping = linearDrag;
+        rb.angularDamping = angularDrag;
         // We handle rotation manually, but keep freezeRotation in case of physics glitches
         rb.freezeRotation = true;
     }
@@ -106,12 +106,12 @@ public class EnemyAI : MonoBehaviour
         }
 
         // Clamp velocity to maxSpeed
-        if (rb.velocity.magnitude > maxSpeed)
+        if (rb.linearVelocity.magnitude > maxSpeed)
         {
-            rb.velocity = rb.velocity.normalized * maxSpeed;
+            rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
         }
         // If within stopping distance and not retreating, gradually reduce velocity
-        else if (moveDirection == Vector2.zero && rb.velocity.magnitude > 0.1f)
+        else if (moveDirection == Vector2.zero && rb.linearVelocity.magnitude > 0.1f)
         {
             // Rely on drag, or optionally add counter-force for faster stops
             // rb.AddForce(-rb.velocity.normalized * accelerationForce * 0.5f); // Example counter-force

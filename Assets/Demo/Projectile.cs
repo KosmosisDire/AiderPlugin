@@ -20,7 +20,7 @@ public class Projectile : MonoBehaviour
     void Start()
     {
         // Propel the projectile forward (assuming it's oriented correctly)
-        rb.velocity = transform.up * speed;
+        rb.linearVelocity = transform.up * speed;
 
         // Destroy the projectile after its lifetime expires
         Destroy(gameObject, lifetime);

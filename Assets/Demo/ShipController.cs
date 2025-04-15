@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Add requirements for the new components
@@ -14,6 +15,8 @@ public class ShipController : MonoBehaviour
 
     [Header("Rotation")]
     [SerializeField] private float rotationSpeed = 360.0f; // Degrees per second for smoothing
+
+    public List<GameObject> testing;
 
     // --- Component References ---
     private Rigidbody2D rb; // <<< Add Rigidbody2D reference
@@ -48,8 +51,8 @@ public class ShipController : MonoBehaviour
 
         // Configure Rigidbody2D
         rb.gravityScale = 0; // Ensure no gravity in 2D space game
-        rb.drag = linearDrag;
-        rb.angularDrag = angularDrag;
+        rb.linearDamping = linearDrag;
+        rb.angularDamping = angularDrag;
 
         // Set the player's projectiles to target enemies
         shootingSystem.SetProjectileTargetTag("Enemy"); // Make sure enemies have the "Enemy" tag
@@ -96,9 +99,9 @@ public class ShipController : MonoBehaviour
         }
 
         // Clamp velocity to maxSpeed
-        if (rb.velocity.magnitude > maxSpeed)
+        if (rb.linearVelocity.magnitude > maxSpeed)
         {
-            rb.velocity = rb.velocity.normalized * maxSpeed;
+            rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
         }
     }
 
