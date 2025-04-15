@@ -53,7 +53,7 @@ public class AiderChatList : ScrollView, IEnumerable<AiderChatMessage>
         for (int i = 0; i < temp.chatList.Count; i++)
         {
             var chatTemp = temp.chatList[i];
-            var msg = new AiderChatMessage(chatTemp.Message, chatTemp.isUser, chatTemp.placeholder);
+            var msg = new AiderChatMessage(chatTemp.Message, chatTemp.isUser, chatTemp.placeholder, chatTemp.Tokens, chatTemp.Cost);
             this.Add(msg);
             chatList.Add(msg);
         }
@@ -91,7 +91,7 @@ public class AiderChatList : ScrollView, IEnumerable<AiderChatMessage>
         }
     }
 
-    public async void AddMessage(string content, bool isUser, string placeholder)
+    public async void AddMessage(string content, bool isUser, string placeholder, int tokens = 0, float cost = 0)
     {
         if (chatList.Count == 0)
         {
@@ -99,7 +99,7 @@ public class AiderChatList : ScrollView, IEnumerable<AiderChatMessage>
             chatTitle = chatTitle[..Mathf.Min(20, chatTitle.Length)];
         }
 
-        var msg = new AiderChatMessage(content, isUser, placeholder);
+        var msg = new AiderChatMessage(content, isUser, placeholder, tokens, cost);
         this.Add(msg);
         chatList.Add(msg);
         UpdateEmpty();

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
@@ -208,6 +207,22 @@ public class Client : Editor
     public static async Task<bool> AddFile(string filePath)
     {
         if (!await Send(new AiderRequest(AiderCommand.Add, filePath)))
+        {
+            return false;
+        }
+
+        var resp = await ReceiveSingleResponseAsync();
+        return !resp.Header.IsError;
+    }
+
+    public static async Task<bool> AddFileFromMemory(string fileName, string content)
+    {
+        // save file to temp directory
+        string tempPath = Path.Combine(Application.temporaryCachePath, fileName);
+        File.WriteAllText(tempPath, content);
+
+        // add file to context
+        if (!await Send(new AiderRequest(AiderCommand.Add, tempPath)))
         {
             return false;
         }

@@ -8,6 +8,7 @@ using System.IO; //Added for file path operation
 using System.Threading;
 using Debug = UnityEngine.Debug;
 using System;
+using UnityEngine.SceneManagement;
 
 
 public class AiderChatWindow : EditorWindow
@@ -182,25 +183,29 @@ public class AiderChatWindow : EditorWindow
 
     }
 
+    private async Task UpdateScene()
+    {
+        string sceneInfo = SceneInfoGenerator.GetSceneInfoJson();
+        bool success = await Client.AddFileFromMemory($"{SceneManager.GetActiveScene().name}", sceneInfo);
+        if (success)
+        {
+            Debug.Log("Scene info updated");
+        }
+        else
+        {
+            Debug.LogError("Failed to update scene info");
+        }
+    }
+
     public async Task SendCurrentMessage()
     {
-        DisableSendButton();
+        await UpdateScene();
         var req = new AiderRequest(textField.value);
         textField.value = "";
         await Client.Send(req);
-        chatList.AddMessage(req.Content, true, "Empty Message");
-        chatList.AddMessage("", false, "Thinking...");
+        chatList.AddMessage(req.Content, true, "<i><color=#888888>No message content</color></i>");
+        chatList.AddMessage("", false, "<i><color=#888888>Thinking...</color></i>");
         _ = Client.ReceiveAllResponesAsync(HandleResponse);
-    }
-
-    public void DisableSendButton()
-    {
-        // sendButton.SetEnabled(false);
-    }
-
-    public void EnableSendButton()
-    {
-        // sendButton.SetEnabled(true);
     }
 
     public void ReplaceChat(AiderChatList chat)
@@ -256,6 +261,7 @@ public class AiderChatWindow : EditorWindow
 
         // Clears Aider's context
         await Client.Reset();
+        await UpdateScene();
         contextList?.Update(await Client.GetContextList());
 
         int index = 0;
@@ -288,35 +294,53 @@ public class AiderChatWindow : EditorWindow
     private async Task OnDragPerform(DragPerformEvent evt)
     {
         DragAndDrop.AcceptDrag();
-
         foreach (var path in DragAndDrop.paths)
         {
             if (File.Exists(path))
             {
                 await Client.AddFile(path);
-                var context = await Client.GetContextList();
-                contextList.Update(context);
                 Debug.Log($"Added {path} to the context");
             }
         }
+
+        foreach (var obj in DragAndDrop.objectReferences)
+        {
+            if (obj is GameObject gameObject)
+            {
+                string objInfo = SceneInfoGenerator.GetDetailedObjectInfo(gameObject);
+                string fileName = $"{gameObject.name}";
+                bool success = await Client.AddFileFromMemory(fileName, objInfo);
+                if (success)
+                {
+                    Debug.Log($"Added {fileName} to the context");
+                }
+                else
+                {
+                    Debug.LogError($"Failed to add {fileName} to the context");
+                }
+            }
+        }
+
+        var context = await Client.GetContextList();
+        contextList.Update(context);
     }
 
     private async Task HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
     {
-        await Task.Delay(1000);
-        
+        var userMsg = chatList[^2];
+        userMsg.Tokens = response.Header.TokensSent;
+        messageEl.Tokens = response.Header.TokensReceived;
+        messageEl.Cost = response.Header.MessageCost;
+        sessionCostLabel.text = $"Session cost: {response.Header.SessionCost}";
+
         // save chat to a file
         chatList.SerializeChat();
         EditorPrefs.SetString("Aider-CurrentChat", chatList.chatID);
 
+        await Task.Delay(1000);
+
         var context = await Client.GetContextList();
         contextList.Update(context);
-
-        var userMsg = chatList[^2];
-
-        userMsg.SetCostLabel(response.Header.TokensSent);
-        messageEl.SetCostLabel(response.Header.TokensReceived, response.Header.MessageCost);
-        sessionCostLabel.text = $"Session cost: {response.Header.SessionCost}";
 
         if (response.HasFileChanges)
         {
@@ -339,14 +363,13 @@ public class AiderChatWindow : EditorWindow
         {
             if (response.Header.IsError)
             {
-                current.SetText(response.Content);
+                current.Message = response.Content;
                 current.AddToClassList("error-message");
-                DisableSendButton();
                 return;
             }
 
-            if (response.Header.IsDiff) current.AppendText(response.Content);
-            else current.SetText(response.Content);
+            if (response.Header.IsDiff) current.Message += response.Content;
+            else current.Message = response.Content;
 
             chatList.ScrollToBottom();
 

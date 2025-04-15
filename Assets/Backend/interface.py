@@ -22,16 +22,35 @@ class AiderCommand(IntEnum):
     WEB = 16
     UNKNOWN = 17
 
+class AiderRequestHeader:
+    HEADER_SIZE = 8
+    
+    def __init__(self, header_marker: int, content_length: int):
+        self.header_marker = header_marker
+        self.content_length = content_length
+
+    @classmethod
+    def deserialize(cls, data: bytes):
+        header_marker = struct.unpack('<i', data[0:4])[0]
+        if (header_marker != 987654321):
+            raise ValueError("Invalid header marker")
+        
+        content_length = struct.unpack('<i', data[4:8])[0]
+
+        return cls(header_marker, content_length)
 
 class AiderRequest:
     def __init__(self, content: str):
+        self.header = None
         self.content = content
     
     # see Interface.cs for the serialization function
     @classmethod
-    def deserialize(cls, data: bytes) -> 'AiderRequest':
-        content_length = struct.unpack('<i', data[0:4])[0]
-        content = data[4:4+content_length].decode()
+    def deserialize(cls, data: bytes, header: AiderRequestHeader) -> 'AiderRequest':
+        if (data is None or len(data) < header.content_length):
+            raise ValueError("Invalid data length")
+        
+        content = data.decode()
         print(f"Deserialized request: {content}")
 
         return cls(content)

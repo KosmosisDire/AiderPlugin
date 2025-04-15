@@ -261,7 +261,7 @@ def init(argv=None, force_git_root=None):
         tokens_sent = coder.message_tokens_sent
         tokens_received = coder.message_tokens_received
 
-        original_usage_report() # pass in coder because it needs the 'self' arg
+        original_usage_report()
         
     coder.show_usage_report = show_usage_report
 

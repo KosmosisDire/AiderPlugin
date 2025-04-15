@@ -86,12 +86,29 @@ public static class AiderCommandHelper
     }
 }
 
+public struct AiderRequestHeader
+{
+    public static readonly int HeaderSize = 4 + 4; // contentLength + headerMarker
+    public int ContentLength { get; set; }
+
+    public byte[] Serialize()
+    {
+        var byteList = new List<byte>();
+        byteList.AddRange(BitConverter.GetBytes(987654321)); // header marker
+        byteList.AddRange(BitConverter.GetBytes(this.ContentLength));
+        return byteList.ToArray();
+    }
+}
+
 public struct AiderRequest
 {
+    public AiderRequestHeader Header { get; set; }
     public string Content { get; set; }
 
     public AiderRequest(AiderCommand command, string content)
     {
+        Header = new();
+
         if (command == AiderCommand.None)
         {
             Content = content;
@@ -104,13 +121,19 @@ public struct AiderRequest
     public AiderRequest(string content)
     {
         Content = content;
+        Header = new();
     }
 
     // see interface.py for the deserialization function
-    public readonly byte[] Serialize()
+    public byte[] Serialize()
     {
+        Header = new AiderRequestHeader
+        {
+            ContentLength = Content.Length
+        };
+
         var byteList = new List<byte>();
-        byteList.AddRange(BitConverter.GetBytes(Content.Length));
+        byteList.AddRange(Header.Serialize());
         byteList.AddRange(System.Text.Encoding.UTF8.GetBytes(Content));
         return byteList.ToArray();
     }

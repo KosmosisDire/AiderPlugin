@@ -3,20 +3,19 @@ import random
 import socket
 import time
 import aider_main
-from interface import AiderCommand, AiderRequest, AiderResponse
+from interface import AiderCommand, AiderRequest, AiderRequestHeader, AiderResponse
 
-reply = """
-I'll create a series of `executeCode` commands to test various Unity built-in types. Each command will be in its own block to help identify which types are accessible.
 
-```unity
-{
-    "command": "executeCode", 
-    "shortDescription": "Testing basic Unity types", 
-    "code": "Debug.Log(\\"Testing execute!\\")"
-}
-```
-
-"""
+# taken from https://stackoverflow.com/questions/17667903/python-socket-receive-large-amount-of-data
+def recvall(sock, n):
+    # Helper function to recv n bytes or return None if EOF is hit
+    data = bytearray()
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet:
+            return None
+        data.extend(packet)
+    return data
 
 class Server:
     def __init__(self):
@@ -28,6 +27,7 @@ class Server:
 
     def start(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((self.host, self.port))
         actual_port = self.server_socket.getsockname()[1]
         self.server_socket.listen()
@@ -57,10 +57,25 @@ class Server:
                 self.send(AiderResponse(word, True))
 
     def receive(self):
-        data = self.conn.recv(1024)
-        if not data:
+        
+        header_data = self.conn.recv(AiderRequestHeader.HEADER_SIZE)
+        if not header_data:
+            print("No header data received")
             return None
-        return AiderRequest.deserialize(data)
+        
+        header = AiderRequestHeader.deserialize(header_data)
+        if header.content_length <= 0:
+            print("Invalid content length")
+            return None
+        
+        print("header:", header.header_marker, header.content_length)
+
+        data = recvall(self.conn, header.content_length)
+        if not data:
+            print("No data received")
+            return None
+        
+        return AiderRequest.deserialize(data, header)
 
     def close(self):
         self.conn.close()
