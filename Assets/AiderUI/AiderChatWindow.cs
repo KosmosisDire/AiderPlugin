@@ -32,7 +32,7 @@ public class AiderChatWindow : EditorWindow
         root.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Editor/AiderWindow.uss"));
         root.AddToClassList(EditorGUIUtility.isProSkin ? "dark-mode" : "light-mode");
         root.AddToClassList("aider-chat-window");
-
+ 
         NewChat();
 
         var inspectorSkin = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector);
