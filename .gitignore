@@ -82,4 +82,4 @@ __pycache__.meta
 # upgrade log
 UpgradeLog.html
 
-ChatList.json
+Assets/AiderUI/chats/*

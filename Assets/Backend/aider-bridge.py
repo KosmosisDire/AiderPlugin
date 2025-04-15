@@ -15,6 +15,7 @@ class Server:
 
     def start(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((self.host, self.port))
         actual_port = self.server_socket.getsockname()[1]
         self.server_socket.listen()
@@ -117,11 +118,18 @@ def main():
                                 server.send_error(f"Cannot drop {name} because it is not in chat.")
 
                         continue
+                    case AiderCommand.RESET:
+                        coder.abs_fnames = set()
+                        coder.abs_read_only_fnames = set()
+                        coder.done_messages = []
+                        coder.cur_messages = []
+                        server.send_string("Reset chat successfully.")
+                        continue
 
                 for output in aider_main.send_message_get_output(request.content):
                     server.send(AiderResponse(output))
 
-                server.send(AiderResponse("", True))
+                server.send(AiderResponse("", True, usage_report=coder.usage_report))
 
 if __name__ == "__main__":
     main()

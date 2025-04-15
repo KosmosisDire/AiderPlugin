@@ -122,12 +122,19 @@ public struct AiderResponse
     public string Content { get; set; }
     public bool Last { get; set; }
     public bool IsError { get; set; }
+    public string UsageReport { get; set; }
+    private string[] ParsedDataGroups => Regex.Match(UsageReport, @"^.+? +(\d.+?) .+?(\d.+?) .+?(\p{Sc}[\d\.\,]+?) .+?(\p{Sc}[\d\.\,]+?) .+").Groups.Select(g => g.Value).ToArray();
+    public string TokenCountSent => ParsedDataGroups.Length > 1 ? ParsedDataGroups[1] : "0";
+    public string TokenCountReceived => ParsedDataGroups.Length > 2 ? ParsedDataGroups[2] : "0";
+    public string CostMessage => ParsedDataGroups.Length > 3 ? ParsedDataGroups[3] : "0";
+    public string CostSession => ParsedDataGroups.Length > 4 ? ParsedDataGroups[4] : "0";
 
-    public AiderResponse(string content, bool last, bool isError)
+    public AiderResponse(string content, bool last, bool isError, string usageReport)
     {
         Content = content;
         Last = last;
         IsError = isError;
+        UsageReport = usageReport;
 
         if (isError)
         {
@@ -141,13 +148,15 @@ public struct AiderResponse
         var contentLength = BitConverter.ToInt32(data, pos); pos += 4;
         var content = System.Text.Encoding.UTF8.GetString(data, pos, contentLength); pos += contentLength;
         var last = BitConverter.ToBoolean(data, pos); pos += 1;
-        var error = BitConverter.ToBoolean(data, pos);
-        return new AiderResponse(content, last, error);
+        var error = BitConverter.ToBoolean(data, pos); pos += 1;
+        int usageReportLength = BitConverter.ToInt32(data, pos); pos += 4;
+        string usageReport = System.Text.Encoding.UTF8.GetString(data, pos, usageReportLength); // pos += usageReportLength;
+        return new AiderResponse(content, last, error, usageReport);
     }
 
     public static AiderResponse Error(string content)
     {
-        return new AiderResponse(content, true, true);
+        return new AiderResponse(content, true, true, string.Empty);
     }
 }
 
