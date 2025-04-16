@@ -109,6 +109,13 @@ public class Client : Editor
             }
             totalBytesRead += bytesRead;
         }
+
+        if (totalBytesRead != count)
+        {
+            throw new IOException($"Expected to read {count} bytes, but only read {totalBytesRead} bytes.");
+        }
+
+        Debug.Log($"Read {count} of {totalBytesRead} bytes from stream.");
     }
 
     private static async Task<AiderResponse> ReceiveSingleResponseAsync(int timeout = 0, CancellationToken cancellationToken = default)

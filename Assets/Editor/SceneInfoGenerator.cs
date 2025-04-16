@@ -55,6 +55,9 @@ public static class SceneInfoGenerator
 
         if (path == "" && obj is GameObject gameObj)
         {
+            if (gameObj == null) return "null";
+            if (gameObj.transform == null) return "null";
+            
             var transform = gameObj.transform;
             path = transform.name;
             while (transform.parent != null)
@@ -269,5 +272,10 @@ public static class SceneInfoGenerator
         string filePath = "Assets/SceneInfo.json";
         Debug.Log("Scene info: " + GetSceneInfoJson());
         SaveSceneInfoToFile(filePath);
+
+        string detailedInfo = GetDetailedObjectInfo(Selection.activeGameObject);
+        Debug.Log("Detailed object info: " + detailedInfo);
+        string detailedFilePath = "Assets/DetailedObjectInfo.json";
+        File.WriteAllText(detailedFilePath, detailedInfo);
     }
 }
