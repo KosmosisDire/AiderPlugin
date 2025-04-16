@@ -74,6 +74,7 @@ crashlytics-build.properties
 
 # aider
 .aider*
+!.aiderignore
 
 # python
 __pycache__/

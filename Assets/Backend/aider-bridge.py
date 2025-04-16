@@ -155,6 +155,9 @@ def main():
                                 server.send_error(f"Cannot drop {name} because it is not in chat.")
 
                         continue
+                    case AiderCommand.MAP:
+                        print("Sending repo map")
+                        server.send_string(coder.get_repo_map())
                     case AiderCommand.RESET:
                         coder.abs_fnames = set()
                         coder.abs_read_only_fnames = set()

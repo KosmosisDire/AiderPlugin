@@ -58,7 +58,7 @@ class AiderRequest:
     def get_command_string(self) -> str:
         name = ""
         if self.content.strip().startswith("/"):
-            name = self.content.strip().split(" ")[0].upper().replace("/", "")
+            name = self.content.strip().split(" ")[0].upper().replace("/", "").replace("-", "_")
 
         return name
     
