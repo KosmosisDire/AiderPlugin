@@ -57,7 +57,7 @@ public class AiderChatWindow : EditorWindow
 
                 foreach (var command in commands)
                 {
-                    command.Execute();
+                    await command.Execute();
                 }
 
                 EditorPrefs.SetBool("Aider-ExecuteOnLoad", false);
@@ -325,7 +325,7 @@ public class AiderChatWindow : EditorWindow
         contextList.Update(context);
     }
 
-    private async Task HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
+    private async void HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
     {
         var userMsg = chatList[^2];
         userMsg.Tokens = response.Header.TokensSent;
@@ -349,9 +349,9 @@ public class AiderChatWindow : EditorWindow
         }
         else
         {
-            foreach (var command in response.Commands)
+            foreach (var command in messageEl.commands)
             {
-                command.Execute();
+                await command.Execute();
             }
         }
     }
@@ -375,7 +375,7 @@ public class AiderChatWindow : EditorWindow
 
             if (response.Header.IsLast)
             {
-                _ = HandleResponseEnd(response, current);
+                HandleResponseEnd(response, current);
             }
         }
         else

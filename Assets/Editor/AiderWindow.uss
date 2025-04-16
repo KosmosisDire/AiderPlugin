@@ -8,8 +8,9 @@
     --accent-color: rgb(54, 101, 255);
     --surface-color: rgb(20, 20, 20);
     --surface-color-muted: rgb(32, 32, 32);
+    --surface-color-transparent: rgba(32, 32, 32, 0.2);
     --bright-text-color: rgba(255, 255, 255, 0.95);
-    --muted-text-color: rgba(255, 255, 255, 0.3);
+    --muted-text-color: rgba(255, 255, 255, 0.4);
     --red-text-color: rgb(255, 107, 94);
     --background-color: rgb(43, 43, 43);
 }
@@ -23,8 +24,9 @@
     --accent-color: rgb(189, 110, 0);
     --surface-color: rgb(219, 219, 219);
     --surface-color-muted: rgb(172, 172, 172);
+    --surface-color-transparent: rgba(172, 172, 172, 0.2);
     --bright-text-color: rgb(0, 0, 0);
-    --muted-text-color: rgb(62, 4, 0);
+    --muted-text-color: rgba(0, 0, 0, 0.4);
     --background-color: rgb(255, 255, 255);
 }   
 
@@ -568,16 +570,53 @@
     -unity-font-definition: url("JetBrainsMono.asset");
 }
 
+.command-view .unity-label
+{
+    color: var(--muted-text-color);
+}
+
+.command-container .output-log
+{
+    display: none;
+    background-color: var(--surface-color-transparent);
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.command-container .output-log.has-output
+{
+    display: flex;
+}
+
+.command-container.command-executing
+{
+    background-color: rgba(70, 190, 254, 0.2);
+    border-color: rgba(136, 213, 254, 0.5);
+}
+
+.command-container.command-finished.command-success
+{
+    background-color: rgba(70, 254, 70, 0.2);
+    border-color: rgba(136, 254, 136, 0.5);
+}
+
+.command-container.command-finished.command-warning
+{
+    background-color: rgba(254, 255, 70, 0.2);
+    border-color: rgba(254, 255, 136, 0.5);
+}
+
+.command-container.command-finished.command-error
+{
+    background-color: rgba(255, 70, 70, 0.2);
+    border-color: rgba(255, 136, 136, 0.5);
+}
+
 .command-container *
 {
     white-space: normal;
-}
-
-.command-container-invalid
-{
-    border-color: var(--red-text-color);
-    background-color: rgba(255, 107, 94, 0.1);
-    color: var(--red-text-color);
 }
 
 .command-title

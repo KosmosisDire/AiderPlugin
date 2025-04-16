@@ -102,7 +102,7 @@ public static class MarkdownParser
         {
             var value = match.ToString();
             var replacement = $"<{tag}{((arg != null) ? ("=" + arg) : "")}>{match.Groups[1].Value}</{tag}>";
-            Debug.Log($"Replacing {value} with {replacement}");
+            // Debug.Log($"Replacing {value} with {replacement}");
             markdown = markdown.Replace(value, replacement);
         }
 
@@ -166,7 +166,7 @@ public static class MarkdownParser
         return markdown;
     }
 
-    public static void Parse(VisualElement parent, string markdown)
+    public static void Parse(VisualElement parent, string markdown, List<AiderUnityCommandBase> unityBlocks = null)
     {
         parent.Clear();
         var codeSelector = new Regex(@"```(.*?)\n([\s\S]+?)```", RegexOptions.Multiline);
@@ -212,8 +212,8 @@ public static class MarkdownParser
             sections.Add(new Section { startIndex = 0, endIndex = markdown.Length });
         }
 
-        var unityBlocks = UnityJsonCommandParser.ParseCommands(markdown);
-        Debug.Log($"Found {unityBlocks.Count} unity blocks in markdown {markdown}");
+        if (unityBlocks == null)
+            unityBlocks = new();
 
         int unityBlockIndex = 0;
         for (var i = 0; i < sections.Count; i++)

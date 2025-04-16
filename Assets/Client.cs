@@ -115,7 +115,7 @@ public class Client : Editor
             throw new IOException($"Expected to read {count} bytes, but only read {totalBytesRead} bytes.");
         }
 
-        Debug.Log($"Read {count} of {totalBytesRead} bytes from stream.");
+        //Debug.Log($"Read {count} of {totalBytesRead} bytes from stream.");
     }
 
     private static async Task<AiderResponse> ReceiveSingleResponseAsync(int timeout = 0, CancellationToken cancellationToken = default)
@@ -146,7 +146,7 @@ public class Client : Editor
 
         AiderResponseHeader header;
         header = AiderResponseHeader.Deserialize(headerBytes);
-        Debug.Log($"Received header: {header.ContentLength} bytes, last: {header.IsLast}, isDiff: {header.IsDiff}, isError: {header.IsError}, tokensSent: {header.TokensSent}, tokensReceived: {header.TokensReceived}, messageCost: {header.MessageCost}, sessionCost: {header.SessionCost}");
+        //Debug.Log($"Received header: {header.ContentLength} bytes, last: {header.IsLast}, isDiff: {header.IsDiff}, isError: {header.IsError}, tokensSent: {header.TokensSent}, tokensReceived: {header.TokensReceived}, messageCost: {header.MessageCost}, sessionCost: {header.SessionCost}");
 
         if (header.ContentLength == 0)
         {
@@ -173,27 +173,27 @@ public class Client : Editor
 
         string content = System.Text.Encoding.UTF8.GetString(contentBytes);
         var response = new AiderResponse(content, header);
-        Debug.Log($"Received response: {content}");
+        //Debug.Log($"Received response: {content}");
         return response;
     }
 
     public static async Task ReceiveAllResponesAsync(Action<AiderResponse> callback,CancellationToken cancellationToken = default)
     {
         while (!cancellationToken.IsCancellationRequested)
-        {
+        { 
             AiderResponse response = await ReceiveSingleResponseAsync(0, cancellationToken);
             callback?.Invoke(response);
 
             if (response.Header.IsError || response.Header.IsLast)
             {
-                Debug.Log("Received last message or error, stopping receive loop.");
+                //Debug.Log("Received last message or error, stopping receive loop.");
                 return;
             }
         }
 
         if (cancellationToken.IsCancellationRequested)
         {
-             Debug.Log("Receive loop cancelled.");
+            Debug.Log("Receive loop cancelled.");
         }
     }
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -55,6 +56,7 @@ public class AiderChatMessage : VisualElement
     public TextField label;
     public Button copyButton;
     public Label usageLabel;
+    public List<AiderUnityCommandBase> commands;
 
     async void CopyToClipboard(bool showConfirm = true)
     {
@@ -119,7 +121,8 @@ public class AiderChatMessage : VisualElement
     public void Reparse()
     {
         this.Clear();
-        MarkdownParser.Parse(this, this.Message);
+        commands = UnityJsonCommandParser.ParseCommands(this.Message);
+        MarkdownParser.Parse(this, this.Message, commands);
 
         if (!isUser)
         {

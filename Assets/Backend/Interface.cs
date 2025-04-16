@@ -190,8 +190,6 @@ public struct AiderResponse
     public AiderResponseHeader Header { get; set; }
     public string Content { get; set; }
 
-    public List<IAiderUnityCommand> Commands { get; private set; }
-
     public bool HasFileChanges => Regex.IsMatch(Content, @"<<<<<<< SEARCH[\n\r]([\s\S]*?)=======[\n\r]([\s\S]+?)[\n\r]>>>>>>> REPLACE", RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     public AiderResponse(string content, AiderResponseHeader header)
@@ -199,7 +197,6 @@ public struct AiderResponse
         
         Content = content;
         Header = header;
-        Commands = UnityJsonCommandParser.ParseCommands(content);
 
         if (header.IsError)
         {

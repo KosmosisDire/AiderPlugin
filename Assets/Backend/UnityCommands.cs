@@ -4,27 +4,116 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public abstract class IAiderUnityCommand
+public enum CommandStatus
 {
+    Success,
+    Warning,
+    Error
+}
 
-    protected abstract void ExecuteCommand();
-    public void Execute()
+public struct CommandFeedback
+{
+    public string message;
+    public CommandStatus status;
+
+    public CommandFeedback(string message = "", CommandStatus status = CommandStatus.Success)
     {
-        try
+        this.message = "";
+        this.status = CommandStatus.Success;
+        Log(message, status);
+    }
+
+
+    public void Log(string message, CommandStatus status)
+    {
+        this.message += "\n" + message;
+        if (status == CommandStatus.Error) this.status = CommandStatus.Error;
+        else if (status == CommandStatus.Warning && status != CommandStatus.Error) this.status = CommandStatus.Warning;
+        else if (status == CommandStatus.Success && status != CommandStatus.Warning) this.status = CommandStatus.Success;
+
+        if (status == CommandStatus.Error)
         {
-            ExecuteCommand();
+            Debug.LogError(message);
         }
-        catch (Exception e)
+        else if (status == CommandStatus.Warning)
         {
-            Debug.LogError($"Error executing command: {e.Message}");
+            Debug.LogWarning(message);
         }
+        else
+        {
+            Debug.Log(message);
+        }
+    }
+}
+
+public abstract class AiderUnityCommandBase
+{
+    VisualElement container;
+    ScrollView outputLog;
+    Label outputLabel;
+
+    public bool isFinished = false;
+    protected abstract Task<CommandFeedback> ExecuteCommand();
+    public async Task Execute()
+    {
+        // try
+        // {
+            container.RemoveFromClassList("command-finished");
+            container.AddToClassList("command-executing");
+            isFinished = false;
+            var output = await ExecuteCommand();
+
+            if (output.status == CommandStatus.Error)
+            {
+                container.AddToClassList("command-error");
+                container.RemoveFromClassList("command-warning");
+                container.RemoveFromClassList("command-success");
+            }
+            else if (output.status == CommandStatus.Warning)
+            {
+                container.AddToClassList("command-warning");
+                container.RemoveFromClassList("command-error");
+                container.RemoveFromClassList("command-success");
+            }
+            else if (output.status == CommandStatus.Success)
+            {
+                container.AddToClassList("command-success");
+                container.RemoveFromClassList("command-warning");
+                container.RemoveFromClassList("command-error");
+            }
+
+
+            if (outputLabel == null)
+                outputLabel = new Label();
+
+            outputLabel.text = output.message?.Trim() ?? "";
+            outputLabel.AddToClassList("command-output-label");
+            outputLog.Add(outputLabel);
+
+            if (!string.IsNullOrWhiteSpace(outputLabel.text))
+            {
+                outputLog.AddToClassList("has-output");
+            }
+            else
+            {
+                outputLog.RemoveFromClassList("has-output");
+            }
+
+            isFinished = true;
+            container.RemoveFromClassList("command-executing");
+            container.AddToClassList("command-finished");
+        // }
+        // catch (Exception e)
+        // {
+        //     Debug.LogError($"Error executing command: {e.Message}");
+        // }
     }
 
     public abstract VisualElement BuildDisplay();
 
     public VisualElement BuildUI()
     {
-        var container = new VisualElement();
+        container = new VisualElement();
         container.AddToClassList("command-container");
         string[] SplitCamelCase(string source)
         {
@@ -44,9 +133,13 @@ public abstract class IAiderUnityCommand
         commandView.AddToClassList("command-view");
         container.Add(commandView);
 
-        var executeButton = new Button(() =>
+        outputLog = new ScrollView();
+        outputLog.AddToClassList("output-log");
+        container.Add(outputLog);
+
+        var executeButton = new Button(async () =>
         {
-            Execute();
+            await Execute();
         });
         executeButton.AddToClassList("command-execute-button");
         container.Add(executeButton);
@@ -55,7 +148,7 @@ public abstract class IAiderUnityCommand
     }
 }
 
-public class InvalidCommand : IAiderUnityCommand
+public class InvalidCommand : AiderUnityCommandBase
 {
     public string errorMessage;
 
@@ -64,22 +157,22 @@ public class InvalidCommand : IAiderUnityCommand
         this.errorMessage = errorMessage;
     }
 
-    protected override void ExecuteCommand()
+    protected override async Task<CommandFeedback> ExecuteCommand()
     {
-        Debug.LogError($"Invalid command: {errorMessage}");
+        return new CommandFeedback(errorMessage, CommandStatus.Error);
     }
 
     public override VisualElement BuildDisplay()
     {
         var container = new VisualElement();
-        container.Add(new Label(errorMessage));
+        // container.Add(new Label(errorMessage));
         return container;
     }
 }
 
 // Add Object Command
 [Serializable]
-public class AddComponentCommand : IAiderUnityCommand
+public class AddComponentCommand : AiderUnityCommandBase
 {
     public string objectPath;
     public string componentType;
@@ -90,7 +183,7 @@ public class AddComponentCommand : IAiderUnityCommand
         this.componentType = componentType;
     }
 
-    protected override void ExecuteCommand()
+    protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing AddComponentCommand: {objectPath} with component {componentType}");
         GameObject targetObject = GameObject.Find(objectPath);
@@ -104,13 +197,15 @@ public class AddComponentCommand : IAiderUnityCommand
             }
             else
             {
-                Debug.LogWarning($"Component type '{componentType}' not found. Component not added to '{objectPath}'.");
+                return new CommandFeedback($"Component type '{componentType}' not found.", CommandStatus.Error);
             }
         }
         else
         {
-            Debug.LogWarning($"Target object '{objectPath}' not found. Component not added.");
+            return new CommandFeedback($"Target object '{objectPath}' not found.", CommandStatus.Error);
         }
+
+        return new CommandFeedback($"Added component {componentType} to {objectPath}", CommandStatus.Success);
     }
 
     public override VisualElement BuildDisplay()
@@ -124,7 +219,7 @@ public class AddComponentCommand : IAiderUnityCommand
 
 // Add Object Command
 [Serializable]
-public class AddObjectCommand : IAiderUnityCommand
+public class AddObjectCommand : AiderUnityCommandBase
 {
     public string objectPath;
     public string objectType;
@@ -152,8 +247,10 @@ public class AddObjectCommand : IAiderUnityCommand
         this.layer = layer;
     }
 
-    protected override void ExecuteCommand()
+    protected override async Task<CommandFeedback> ExecuteCommand()
     {
+        var commandFeedback = new CommandFeedback();
+
         Debug.Log($"Executing AddObjectCommand: {objectPath}");
         GameObject newObject = new GameObject("TEMP_OBJECT");
 
@@ -168,7 +265,7 @@ public class AddObjectCommand : IAiderUnityCommand
             }
             else
             {
-                Debug.LogWarning($"Parent object '{parentPath}' not found. Object will be created at root level.");
+                commandFeedback.Log($"Parent object '{parentPath}' not found. Setting as root.", CommandStatus.Warning);
             }
         }
 
@@ -191,12 +288,16 @@ public class AddObjectCommand : IAiderUnityCommand
                 var component = newObject.AddComponent(type);
                 if (component == null)
                 {
-                    Debug.LogWarning($"Failed to add component of type '{objectType}' to '{objectPath}'.");
+                    commandFeedback.Log($"Failed to add component of type '{objectType}' to '{objectPath}'.", CommandStatus.Error);
+                }
+                else
+                {
+                    commandFeedback.Log($"Added component of type '{objectType}' to '{objectPath}'.", CommandStatus.Success);
                 }
             }
             else
             {
-                Debug.LogWarning($"Type '{objectType}' not found. Component not added to '{objectPath}'.");
+                commandFeedback.Log($"Type '{objectType}' not found.", CommandStatus.Error);
             }
         }
 
@@ -215,9 +316,11 @@ public class AddObjectCommand : IAiderUnityCommand
             }
             else
             {
-                Debug.LogWarning($"Layer '{layer}' not found. Layer not set for '{objectPath}'.");
+                commandFeedback.Log($"Layer '{layer}' not found.", CommandStatus.Warning);
             }
         }
+
+        return commandFeedback;
     }
 
     public override VisualElement BuildDisplay()
@@ -230,7 +333,7 @@ public class AddObjectCommand : IAiderUnityCommand
 
 // Execute Code Command
 [Serializable]
-public class ExecuteCodeCommand : IAiderUnityCommand
+public class ExecuteCodeCommand : AiderUnityCommandBase
 {
     public string shortDescription;
     public string code;
@@ -241,17 +344,16 @@ public class ExecuteCodeCommand : IAiderUnityCommand
         this.code = code;
     }
 
-    protected override async void ExecuteCommand()
+    protected override async Task<CommandFeedback> ExecuteCommand()
     {
-        Debug.Log($"Executing ExecuteCodeCommand: {code}");
         try
         {
             var result = await CSharpCompiler.ExecuteCommand(code);
-            Debug.Log($"Result: {result}");
+            return new CommandFeedback($"{result}", CommandStatus.Success);
         }
         catch (Exception e)
         {
-            Debug.LogError($"Error executing code: {e.Message}");
+            return new CommandFeedback($"Error executing code: {e.Message}", CommandStatus.Error);
         }
     }
 
@@ -268,7 +370,7 @@ public class ExecuteCodeCommand : IAiderUnityCommand
 
 // Set Component Property Command
 [Serializable]
-public class SetComponentPropertyCommand : IAiderUnityCommand
+public class SetComponentPropertyCommand : AiderUnityCommandBase
 {
     public string objectPath;
     public string componentType;
@@ -283,7 +385,7 @@ public class SetComponentPropertyCommand : IAiderUnityCommand
         this.value = value;
     }
 
-    protected override void ExecuteCommand()
+    protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing SetComponentPropertyCommand: {objectPath}, {componentType}, {propertyPath}");
         GameObject targetObject = GameObject.Find(objectPath);
@@ -318,8 +420,7 @@ public class SetComponentPropertyCommand : IAiderUnityCommand
                                 }
                                 else
                                 {
-                                    Debug.LogError($"Property or field '{propertyPathParts[i]}' not found on {targetObj.GetType().Name}");
-                                    return;
+                                    return new CommandFeedback($"Property or field '{propertyPathParts[i]}' not found on {targetObj.GetType().Name}", CommandStatus.Error);
                                 }
                             }
                         }
@@ -336,11 +437,11 @@ public class SetComponentPropertyCommand : IAiderUnityCommand
                                 if (asset != null)
                                 {
                                     finalPropertyInfo.SetValue(targetObj, asset);
-                                    Debug.Log($"Set property {propertyPath} to asset at {value}");
+                                    return new CommandFeedback($"Set property {propertyPath} to asset at {value}", CommandStatus.Success);
                                 }
                                 else
                                 {
-                                    Debug.LogError($"Failed to load asset at path: {stringValue}");
+                                    return new CommandFeedback($"Failed to load asset at path: {stringValue}", CommandStatus.Error);
                                 }
                             }
                             else
@@ -348,7 +449,7 @@ public class SetComponentPropertyCommand : IAiderUnityCommand
                                 // Use the original conversion logic
                                 object convertedValue = Convert.ChangeType(value, finalPropertyInfo.PropertyType);
                                 finalPropertyInfo.SetValue(targetObj, convertedValue);
-                                Debug.Log($"Set property {propertyPath} to {value}");
+                                return new CommandFeedback($"Set property {propertyPath} to {value}", CommandStatus.Success);
                             }
                         }
                         else
@@ -363,11 +464,11 @@ public class SetComponentPropertyCommand : IAiderUnityCommand
                                     if (asset != null)
                                     {
                                         finalFieldInfo.SetValue(targetObj, asset);
-                                        Debug.Log($"Set field {propertyPath} to asset at {value}");
+                                        return new CommandFeedback($"Set field {propertyPath} to asset at {value}", CommandStatus.Success);
                                     }
                                     else
                                     {
-                                        Debug.LogError($"Failed to load asset at path: {stringValue}");
+                                        return new CommandFeedback($"Failed to load asset at path: {stringValue}", CommandStatus.Error);
                                     }
                                 }
                                 else
@@ -375,33 +476,33 @@ public class SetComponentPropertyCommand : IAiderUnityCommand
                                     // Use the original conversion logic
                                     object convertedValue = Convert.ChangeType(value, finalFieldInfo.FieldType);
                                     finalFieldInfo.SetValue(targetObj, convertedValue);
-                                    Debug.Log($"Set field {propertyPath} to {value}");
+                                    return new CommandFeedback($"Set field {propertyPath} to {value}", CommandStatus.Success);
                                 }
                             }
                             else
                             {
-                                Debug.LogError($"Property or field '{finalProperty}' not found on {targetObj.GetType().Name}");
+                                return new CommandFeedback($"Property or field '{finalProperty}' not found on {targetObj.GetType().Name}", CommandStatus.Error);
                             }
                         }
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError($"Error setting property: {e.Message}");
+                        return new CommandFeedback($"Error setting property '{propertyPath}': {e.Message}", CommandStatus.Error);
                     }
                 }
                 else
                 {
-                    Debug.LogWarning($"Component '{componentType}' not found on '{objectPath}'.");
+                    return new CommandFeedback($"Component '{componentType}' not found on '{objectPath}'", CommandStatus.Error);
                 }
             }
             else
             {
-                Debug.LogWarning($"Component type '{componentType}' not found.");
+                return new CommandFeedback($"Component type '{componentType}' not found.", CommandStatus.Error);
             }
         }
         else
         {
-            Debug.LogWarning($"Target object '{objectPath}' not found.");
+            return new CommandFeedback($"Target object '{objectPath}' not found.", CommandStatus.Error);
         }
     }
 
@@ -427,7 +528,7 @@ public class SetComponentPropertyCommand : IAiderUnityCommand
 
 // Delete Object Command
 [Serializable]
-public class DeleteObjectCommand : IAiderUnityCommand
+public class DeleteObjectCommand : AiderUnityCommandBase
 {
     public string objectPath;
 
@@ -436,18 +537,18 @@ public class DeleteObjectCommand : IAiderUnityCommand
         this.objectPath = objectPath;
     }
 
-    protected override void ExecuteCommand()
+    protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing DeleteObjectCommand: {objectPath}");
         GameObject targetObject = GameObject.Find(objectPath);
         if (targetObject != null)
         {
             UnityEngine.Object.DestroyImmediate(targetObject);
-            Debug.Log($"Deleted object {objectPath}");
+            return new CommandFeedback($"Deleted object {objectPath}", CommandStatus.Success);
         }
         else
         {
-            Debug.LogWarning($"Target object '{objectPath}' not found. Nothing to delete.");
+            return new CommandFeedback($"Target object '{objectPath}' not found.", CommandStatus.Error);
         }
     }
 
@@ -461,7 +562,7 @@ public class DeleteObjectCommand : IAiderUnityCommand
 
 // Create Prefab Command
 [Serializable]
-public class CreatePrefabCommand : IAiderUnityCommand
+public class CreatePrefabCommand : AiderUnityCommandBase
 {
     public string objectPath;
     public string prefabPath;
@@ -472,7 +573,7 @@ public class CreatePrefabCommand : IAiderUnityCommand
         this.prefabPath = prefabPath;
     }
 
-    protected override void ExecuteCommand()
+    protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing CreatePrefabCommand: {objectPath} to {prefabPath}");
         GameObject targetObject = GameObject.Find(objectPath);
@@ -487,19 +588,18 @@ public class CreatePrefabCommand : IAiderUnityCommand
                     System.IO.Directory.CreateDirectory(directory);
                 }
 
-                // Save as prefab (this part requires Unity Editor)
                 UnityEditor.PrefabUtility.SaveAsPrefabAsset(targetObject, prefabPath);
-                Debug.Log($"Created prefab at {prefabPath}");
                 UnityEditor.AssetDatabase.Refresh();
+                return new CommandFeedback($"Created prefab at {prefabPath}", CommandStatus.Success);
             }
             catch (Exception e)
             {
-                Debug.LogError($"Error creating prefab: {e.Message}");
+                return new CommandFeedback($"Error creating prefab: {e.Message}", CommandStatus.Error);
             }
         }
         else
         {
-            Debug.LogWarning($"Target object '{objectPath}' not found. Prefab not created.");
+            return new CommandFeedback($"Target object '{objectPath}' not found.", CommandStatus.Error);
         }
     }
 
@@ -513,7 +613,7 @@ public class CreatePrefabCommand : IAiderUnityCommand
 
 // Instantiate Prefab Command
 [Serializable]
-public class InstantiatePrefabCommand : IAiderUnityCommand
+public class InstantiatePrefabCommand : AiderUnityCommandBase
 {
     public string prefabPath;
     public float[] position;
@@ -535,7 +635,7 @@ public class InstantiatePrefabCommand : IAiderUnityCommand
         this.parentPath = parentPath;
     }
 
-    protected override void ExecuteCommand()
+    protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing InstantiatePrefabCommand: {prefabPath}");
         try
@@ -561,20 +661,20 @@ public class InstantiatePrefabCommand : IAiderUnityCommand
                     }
                     else
                     {
-                        Debug.LogWarning($"Parent object '{parentPath}' not found. Instance created at root level.");
+                        return new CommandFeedback($"Parent object '{parentPath}' not found. Prefab not instantiated under parent.", CommandStatus.Warning);
                     }
                 }
                 
-                Debug.Log($"Instantiated prefab {prefabPath}");
+                return new CommandFeedback($"Instantiated prefab {prefabPath} at {position[0]}, {position[1]}, {position[2]}", CommandStatus.Success);
             }
             else
             {
-                Debug.LogWarning($"Prefab at path '{prefabPath}' not found.");
+                return new CommandFeedback($"Prefab '{prefabPath}' not found.", CommandStatus.Error);
             }
         }
         catch (Exception e)
         {
-            Debug.LogError($"Error instantiating prefab: {e.Message}");
+            return new CommandFeedback($"Error instantiating prefab: {e.Message}", CommandStatus.Error);
         }
     }
 
@@ -588,7 +688,7 @@ public class InstantiatePrefabCommand : IAiderUnityCommand
 
 // Set Parent Command
 [Serializable]
-public class SetParentCommand : IAiderUnityCommand
+public class SetParentCommand : AiderUnityCommandBase
 {
     public string objectPath;
     public string parentPath;
@@ -601,7 +701,7 @@ public class SetParentCommand : IAiderUnityCommand
         this.worldPositionStays = worldPositionStays;
     }
 
-    protected override void ExecuteCommand()
+    protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing SetParentCommand: {objectPath} to parent {parentPath}");
         GameObject targetObject = GameObject.Find(objectPath);
@@ -613,24 +713,23 @@ public class SetParentCommand : IAiderUnityCommand
             if (string.IsNullOrEmpty(parentPath))
             {
                 targetObject.transform.SetParent(null, worldPositionStays);
-                Debug.Log($"Set {objectPath} parent to null (root)");
-                return;
+                return new CommandFeedback($"Unparented {objectPath}", CommandStatus.Success);
             }
             
             parentObject = GameObject.Find(parentPath);
             if (parentObject != null)
             {
                 targetObject.transform.SetParent(parentObject.transform, worldPositionStays);
-                Debug.Log($"Set {objectPath} parent to {parentPath}");
+                return new CommandFeedback($"Set parent of {objectPath} to {parentPath}", CommandStatus.Success);
             }
             else
             {
-                Debug.LogWarning($"Parent object '{parentPath}' not found. Parent not set.");
+                return new CommandFeedback($"Parent object '{parentPath}' not found. Parent not set.", CommandStatus.Warning);
             }
         }
         else
         {
-            Debug.LogWarning($"Target object '{objectPath}' not found. Parent not set.");
+            return new CommandFeedback($"Target object '{objectPath}' not found.", CommandStatus.Error);
         }
     }
 

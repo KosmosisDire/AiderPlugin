@@ -75,7 +75,7 @@ class UnityJsonCommandParser
         return sb.ToString();
     }
     
-    public static List<IAiderUnityCommand> ParseCommands(string messageContents)
+    public static List<AiderUnityCommandBase> ParseCommands(string messageContents)
     {
         // find all ```unity code blocks and their contents
         var regex = new Regex(@"```unity\n([\s\S]*?)```", RegexOptions.Multiline);
@@ -85,7 +85,7 @@ class UnityJsonCommandParser
             return new();
         }
 
-        List<IAiderUnityCommand> commands = new();
+        List<AiderUnityCommandBase> commands = new();
         foreach (Match match in matches)
         {
             try
@@ -96,38 +96,38 @@ class UnityJsonCommandParser
                 if (commandTypeMatch.Success)
                 {
                     var commandType = commandTypeMatch.Groups[1].Value;
-                    IAiderUnityCommand command = null;
-                    Debug.Log($"Command Type: {commandType}");
+                    AiderUnityCommandBase command = null;
+                    // Debug.Log($"Command Type: {commandType}");
 
                     commandBlock = FixMultilineStrings(commandBlock);
-                    Debug.Log($"Command Block: {commandBlock}");
+                    // Debug.Log($"Command Block: {commandBlock}");
 
                     switch (commandType)
                     {
                         case "addObject":
-                            command = JsonUtility.FromJson<AddObjectCommand>(commandBlock) as IAiderUnityCommand;
+                            command = JsonUtility.FromJson<AddObjectCommand>(commandBlock) as AiderUnityCommandBase;
                             break;
                         case "addComponent":
-                            command = JsonUtility.FromJson<AddComponentCommand>(commandBlock) as IAiderUnityCommand;
+                            command = JsonUtility.FromJson<AddComponentCommand>(commandBlock) as AiderUnityCommandBase;
                             break;
                         case "executeCode":
-                            command = JsonUtility.FromJson<ExecuteCodeCommand>(commandBlock) as IAiderUnityCommand;
-                            Debug.Log($"Command: {command}; Code: {commandBlock}");
+                            command = JsonUtility.FromJson<ExecuteCodeCommand>(commandBlock) as AiderUnityCommandBase;
+                            // Debug.Log($"Command: {command}; Code: {commandBlock}");
                             break;
                         case "setComponentProperty":
-                            command = JsonUtility.FromJson<SetComponentPropertyCommand>(commandBlock) as IAiderUnityCommand;
+                            command = JsonUtility.FromJson<SetComponentPropertyCommand>(commandBlock) as AiderUnityCommandBase;
                             break;
                         case "deleteObject":
-                            command = JsonUtility.FromJson<DeleteObjectCommand>(commandBlock) as IAiderUnityCommand;
+                            command = JsonUtility.FromJson<DeleteObjectCommand>(commandBlock) as AiderUnityCommandBase;
                             break;
                         case "createPrefab":
-                            command = JsonUtility.FromJson<CreatePrefabCommand>(commandBlock) as IAiderUnityCommand;
+                            command = JsonUtility.FromJson<CreatePrefabCommand>(commandBlock) as AiderUnityCommandBase;
                             break;
                         case "instantiatePrefab":
-                            command = JsonUtility.FromJson<InstantiatePrefabCommand>(commandBlock) as IAiderUnityCommand;
+                            command = JsonUtility.FromJson<InstantiatePrefabCommand>(commandBlock) as AiderUnityCommandBase;
                             break;
                         case "setParent":
-                            command = JsonUtility.FromJson<SetParentCommand>(commandBlock) as IAiderUnityCommand;
+                            command = JsonUtility.FromJson<SetParentCommand>(commandBlock) as AiderUnityCommandBase;
                             break;
                     }
 

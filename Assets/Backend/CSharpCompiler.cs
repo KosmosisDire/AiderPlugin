@@ -50,7 +50,7 @@ public static class CSharpCompiler
             // Compile the assembly
             if (!assemblyBuilder.Build())
             {
-                Debug.LogError("Editor already compiling, cannot compile.");
+                throw new Exception("Compilation failed because Unity is laready compiling.");
             }
 
             bool finished = false;
@@ -77,8 +77,7 @@ public static class CSharpCompiler
                 {
                     sb.AppendLine(error);
                 }
-                Debug.LogError(sb.ToString());
-                return null;
+                throw new Exception(sb.ToString());
             }
             
             // Load the assembly from the output path
@@ -152,25 +151,10 @@ public static class CSharpCompiler
             }}
         ";
 
-        // Compile the code
         var assembly = await CompileCode(wrappedCode, "CodeExecutor");
-        if (assembly == null)
-        {
-            Debug.LogError("Compilation failed.");
-            return null;
-        }
+        var result = ExecuteMethod(assembly, "CodeExecutor", "Execute");
+        return result;
 
-        // Execute the method
-        try
-        {
-            var result = ExecuteMethod(assembly, "CodeExecutor", "Execute");
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Execution failed: {ex.Message}");
-            return null;
-        }
     }
 
 }
