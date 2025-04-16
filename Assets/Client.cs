@@ -64,11 +64,10 @@ public class Client : Editor
             }
         }
 
-
         try
         {
             byte[] data = request.Serialize();
-            stream.Write(data, 0, data.Length);
+            await stream.WriteAsync(data, 0, data.Length);
             return true;
         }
         catch (Exception e)
@@ -80,7 +79,7 @@ public class Client : Editor
                 try
                 {
                     byte[] data = request.Serialize();
-                    stream.Write(data, 0, data.Length);
+                    await stream.WriteAsync(data, 0, data.Length);
                     return true;
                 }
                 catch (Exception e2)
@@ -112,11 +111,20 @@ public class Client : Editor
         }
     }
 
-    private static async Task<AiderResponse> ReceiveSingleResponseAsync(CancellationToken cancellationToken = default)
+    private static async Task<AiderResponse> ReceiveSingleResponseAsync(int timeout = 0, CancellationToken cancellationToken = default)
     {
         if (!IsConnected)
         {
             return AiderResponse.Error("Not connected to bridge");
+        }
+
+        if (timeout > 0)
+        {
+            stream.ReadTimeout = timeout;
+        }
+        else
+        {
+            stream.ReadTimeout = 500000; // 500 seconds
         }
 
         byte[] headerBytes = new byte[AiderResponseHeader.HeaderSize];
@@ -166,7 +174,7 @@ public class Client : Editor
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            AiderResponse response = await ReceiveSingleResponseAsync(cancellationToken);
+            AiderResponse response = await ReceiveSingleResponseAsync(0, cancellationToken);
             callback?.Invoke(response);
 
             if (response.Header.IsError || response.Header.IsLast)
@@ -211,7 +219,7 @@ public class Client : Editor
             return false;
         }
 
-        var resp = await ReceiveSingleResponseAsync();
+        var resp = await ReceiveSingleResponseAsync(1000);
         return !resp.Header.IsError;
     }
 
@@ -227,7 +235,7 @@ public class Client : Editor
             return false;
         }
 
-        var resp = await ReceiveSingleResponseAsync();
+        var resp = await ReceiveSingleResponseAsync(1000);
         return !resp.Header.IsError;
     }
 
@@ -243,7 +251,7 @@ public class Client : Editor
             return false;
         }
 
-        var resp = await ReceiveSingleResponseAsync();
+        var resp = await ReceiveSingleResponseAsync(1000);
         return !resp.Header.IsError;
     }
 
@@ -254,7 +262,7 @@ public class Client : Editor
             return false;
         }
         
-        var resp = await ReceiveSingleResponseAsync();
+        var resp = await ReceiveSingleResponseAsync(1000);
         return !resp.Header.IsError;
     }
 

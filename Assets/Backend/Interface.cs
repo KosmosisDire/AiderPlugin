@@ -91,6 +91,11 @@ public struct AiderRequestHeader
     public static readonly int HeaderSize = 4 + 4; // contentLength + headerMarker
     public int ContentLength { get; set; }
 
+    public AiderRequestHeader(int contentLength)
+    {
+        ContentLength = contentLength;
+    }
+
     public byte[] Serialize()
     {
         var byteList = new List<byte>();
@@ -127,10 +132,7 @@ public struct AiderRequest
     // see interface.py for the deserialization function
     public byte[] Serialize()
     {
-        Header = new AiderRequestHeader
-        {
-            ContentLength = Content.Length
-        };
+        Header = new (Content.Length);
 
         var byteList = new List<byte>();
         byteList.AddRange(Header.Serialize());

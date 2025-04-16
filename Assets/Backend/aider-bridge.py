@@ -10,6 +10,10 @@ from interface import AiderCommand, AiderRequest, AiderRequestHeader, AiderRespo
 def recvall(sock, n):
     # Helper function to recv n bytes or return None if EOF is hit
     data = bytearray()
+    
+    if (n <= 0):
+        return data
+
     while len(data) < n:
         packet = sock.recv(n - len(data))
         if not packet:
@@ -57,14 +61,16 @@ class Server:
                 self.send(AiderResponse(word, True))
 
     def receive(self):
-        
+        print("Waiting for data...")
         header_data = self.conn.recv(AiderRequestHeader.HEADER_SIZE)
-        if not header_data:
+        if not header_data or len(header_data) < AiderRequestHeader.HEADER_SIZE:
             print("No header data received")
             return None
+    
+        print("Header data received:", header_data)
         
         header = AiderRequestHeader.deserialize(header_data)
-        if header.content_length <= 0:
+        if header is None or header.content_length <= 0:
             print("Invalid content length")
             return None
         
@@ -75,6 +81,7 @@ class Server:
             print("No data received")
             return None
         
+        print("Data received:", data)
         return AiderRequest.deserialize(data, header)
 
     def close(self):
@@ -121,7 +128,7 @@ def main():
                         else:
 
                             # check if there is only one file in all files that ends with filename
-                            # because the user may have just but the name of the file not the path
+                            # because the user may have just put the name of the file not the path
                             filename = name.replace("\\", "/").split("/")[-1]
                             matches = [fname for fname in coder.get_all_relative_files() if fname.endswith(f"{filename}")]
                             if len(matches) == 1:

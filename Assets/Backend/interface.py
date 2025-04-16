@@ -33,7 +33,7 @@ class AiderRequestHeader:
     def deserialize(cls, data: bytes):
         header_marker = struct.unpack('<i', data[0:4])[0]
         if (header_marker != 987654321):
-            raise ValueError("Invalid header marker")
+            return None
         
         content_length = struct.unpack('<i', data[4:8])[0]
 
@@ -95,3 +95,4 @@ class AiderResponse:
     def serialize(self) -> bytes:
         msg = struct.pack('<i', 123456789) + struct.pack('<i', len(self.content)) + struct.pack('<?', self.last) + struct.pack('<?', self.is_diff) + struct.pack('<?', self.error) + struct.pack('<i', self.tokensSent) + struct.pack('<i', self.tokensReceived) + struct.pack('<f', self.messageCost) + struct.pack('<f', self.sessionCost) + self.content.encode()
         return msg
+
