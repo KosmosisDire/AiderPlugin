@@ -107,9 +107,27 @@ class UnityJsonCommandParser
                         case "addObject":
                             command = JsonUtility.FromJson<AddObjectCommand>(commandBlock) as IAiderUnityCommand;
                             break;
+                        case "addComponent":
+                            command = JsonUtility.FromJson<AddComponentCommand>(commandBlock) as IAiderUnityCommand;
+                            break;
                         case "executeCode":
                             command = JsonUtility.FromJson<ExecuteCodeCommand>(commandBlock) as IAiderUnityCommand;
                             Debug.Log($"Command: {command}; Code: {commandBlock}");
+                            break;
+                        case "setComponentProperty":
+                            command = JsonUtility.FromJson<SetComponentPropertyCommand>(commandBlock) as IAiderUnityCommand;
+                            break;
+                        case "deleteObject":
+                            command = JsonUtility.FromJson<DeleteObjectCommand>(commandBlock) as IAiderUnityCommand;
+                            break;
+                        case "createPrefab":
+                            command = JsonUtility.FromJson<CreatePrefabCommand>(commandBlock) as IAiderUnityCommand;
+                            break;
+                        case "instantiatePrefab":
+                            command = JsonUtility.FromJson<InstantiatePrefabCommand>(commandBlock) as IAiderUnityCommand;
+                            break;
+                        case "setParent":
+                            command = JsonUtility.FromJson<SetParentCommand>(commandBlock) as IAiderUnityCommand;
                             break;
                     }
 
