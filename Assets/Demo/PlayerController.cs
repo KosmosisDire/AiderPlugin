@@ -16,8 +16,8 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         // Ensure Rigidbody settings are appropriate for top-down 2D space
         rb.gravityScale = 0;
-        rb.drag = 1.0f; // Linear drag for floaty movement
-        rb.angularDrag = 1.5f; // Angular drag for floaty rotation
+        rb.linearDamping = 1.0f; // Linear drag for floaty movement
+        rb.angularDamping = 1.5f; // Angular drag for floaty rotation
     }
 
     void Update()
