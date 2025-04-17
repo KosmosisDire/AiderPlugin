@@ -28,9 +28,10 @@ public static class AiderRunner
                         return true;
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     // Process not found, will start a new one
+                    Debug.Log("Aider Bridge process not found with PID: " + pid + ", starting a new one. " + e.Message);
                 }
             }
             
