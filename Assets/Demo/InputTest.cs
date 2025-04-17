@@ -3,10 +3,7 @@ using UnityEngine.InputSystem;
 
 public class InputTest : MonoBehaviour
 {
-    // Assign the Input Action Asset in the Inspector
-    public InputActionAsset inputActions;
-
-    // Actions will be found and assigned in Awake
+    // Actions will be created and configured in Awake
     [Header("Test Action")]
     public InputAction testAction { get; private set; } // Example action
 
@@ -20,47 +17,28 @@ public class InputTest : MonoBehaviour
     public InputAction leftStick { get; private set; } // Expects Vector2
     public InputAction rightStick { get; private set; } // Expects Vector2
 
-    // Name of the Action Map in your Input Action Asset
-    private const string ActionMapName = "Player"; // <<< ADJUST THIS IF YOUR MAP NAME IS DIFFERENT
 
     void Awake()
     {
-        if (inputActions == null)
-        {
-            Debug.LogError("Input Action Asset is not assigned in the Inspector!", this);
-            return;
-        }
+        // Create and configure actions directly
+        testAction = new InputAction("TestAction", binding: "<Keyboard>/space"); // Example binding
 
-        // Find the action map
-        var actionMap = inputActions.FindActionMap(ActionMapName, throwIfNotFound: true);
-        if (actionMap == null)
-        {
-             Debug.LogError($"Action Map '{ActionMapName}' not found in the assigned Input Action Asset!", this);
-             return;
-        }
+        buttonA = new InputAction("ButtonA", type: InputActionType.Button, binding: "<Gamepad>/buttonSouth");
+        buttonB = new InputAction("ButtonB", type: InputActionType.Button, binding: "<Gamepad>/buttonEast");
+        buttonX = new InputAction("ButtonX", type: InputActionType.Button, binding: "<Gamepad>/buttonWest");
+        buttonY = new InputAction("ButtonY", type: InputActionType.Button, binding: "<Gamepad>/buttonNorth");
 
+        leftStick = new InputAction("LeftStick", type: InputActionType.Value, binding: "<Gamepad>/leftStick");
+        // Add deadzone processor for joysticks if desired
+        leftStick.AddBinding("<XInputController>/leftStick").WithProcessor("stickDeadzone"); // Example for XInput specifically
 
-        // Find and assign each action by name
-        // Using a helper function to reduce repetition
-        testAction = FindActionOrFail(actionMap, "TestAction"); // <<< ADJUST ACTION NAME IF NEEDED
-        buttonA = FindActionOrFail(actionMap, "ButtonA");       // <<< ADJUST ACTION NAME IF NEEDED
-        buttonB = FindActionOrFail(actionMap, "ButtonB");       // <<< ADJUST ACTION NAME IF NEEDED
-        buttonX = FindActionOrFail(actionMap, "ButtonX");       // <<< ADJUST ACTION NAME IF NEEDED
-        buttonY = FindActionOrFail(actionMap, "ButtonY");       // <<< ADJUST ACTION NAME IF NEEDED
-        leftStick = FindActionOrFail(actionMap, "LeftStick");   // <<< ADJUST ACTION NAME IF NEEDED
-        rightStick = FindActionOrFail(actionMap, "RightStick"); // <<< ADJUST ACTION NAME IF NEEDED
+        rightStick = new InputAction("RightStick", type: InputActionType.Value, binding: "<Gamepad>/rightStick");
+        rightStick.AddBinding("<XInputController>/rightStick").WithProcessor("stickDeadzone"); // Example for XInput specifically
 
-        Debug.Log("Input Actions assigned from Asset.");
-    }
+        // You can add more bindings if needed, e.g., for keyboard fallbacks
+        // buttonA.AddBinding("<Keyboard>/j");
 
-    private InputAction FindActionOrFail(InputActionMap map, string actionName)
-    {
-        var action = map.FindAction(actionName);
-        if (action == null)
-        {
-            Debug.LogError($"Action '{actionName}' not found within Action Map '{map.name}'!", this);
-        }
-        return action;
+        Debug.Log("Input Actions created and configured.");
     }
 
 
