@@ -169,7 +169,7 @@ def main():
                 full_output = ""
                 for output in aider_main.send_message_get_output(request.content):
                     full_output += output
-                    server.send(AiderResponse(full_output, False))
+                    server.send(AiderResponse(output, False, True))
 
                 print(f"Tokens sent: {aider_main.tokens_sent}, Tokens received: {aider_main.tokens_received}, Message cost: {aider_main.message_cost}, Session cost: {aider_main.total_cost}")
                 

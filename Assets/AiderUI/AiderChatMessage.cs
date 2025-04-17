@@ -9,17 +9,30 @@ public class AiderChatMessage : VisualElement
 {
     [SerializeField]
     private string _message;
+    private bool isPlaceholder = false;
     public string Message
     {
-        get => _message;
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_message) || isPlaceholder)
+            {
+                return string.Empty;
+            }
+            else
+            {
+                return _message;
+            }
+        }
         set 
         {
             if (string.IsNullOrWhiteSpace(value))
             {
                 _message = placeholder;
+                isPlaceholder = true;
             }
             else
             {
+                isPlaceholder = false;
                 _message = value;
             }
 
@@ -122,7 +135,7 @@ public class AiderChatMessage : VisualElement
     {
         this.Clear();
         commands = UnityJsonCommandParser.ParseCommands(this.Message);
-        MarkdownParser.Parse(this, this.Message, commands);
+        MarkdownParser.Parse(this, this._message, commands); // use _message to get the placeholder as well / the raw content
 
         if (!isUser)
         {
