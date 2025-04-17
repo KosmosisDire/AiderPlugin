@@ -133,6 +133,8 @@ Important guidelines:
 - REMEMBER ONLY WRITE CODE THAT YOU MIGHT FIND INSIDE A FUNCTION! NO OUTER BODY!
 
 Present your final command in a Unity code block.
+
+Put all new scripts in the Demo folder
 """
 
 

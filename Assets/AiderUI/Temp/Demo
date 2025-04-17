@@ -1,0 +1,17 @@
+{
+    "sceneName": "Demo",
+    "unityVersion": "6000.0.37f1",
+    "objects": [
+        {
+            "scenePath": "Main Camera",
+            "tag": "MainCamera",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform",
+                "Camera",
+                "AudioListener"
+            ]
+        }
+    ]
+}
