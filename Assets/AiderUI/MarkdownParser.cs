@@ -187,24 +187,35 @@ public static class MarkdownParser
         }
 
         // generate inbetween sections
+        var newSections = new List<Section>();
+        newSections.AddRange(sections);
         for (var i = 0; i < sections.Count; i++)
         {
             var section = sections[i];
             if (i == 0 && section.startIndex > 0)
             {
-                sections.Insert(i, new Section { startIndex = 0, endIndex = section.startIndex });
-                i++;
-            }
-            else if (i == sections.Count - 1 && section.endIndex < markdown.Length)
-            {
-                sections.Insert(i + 1, new Section { startIndex = section.endIndex, endIndex = markdown.Length });
+                newSections.Insert(0, new Section { startIndex = 0, endIndex = section.startIndex });
             }
             else if (i < sections.Count - 1 && section.endIndex < sections[i + 1].startIndex)
             {
-                sections.Insert(i + 1, new Section { startIndex = section.endIndex, endIndex = sections[i + 1].startIndex });
-                i++;
+                newSections.Insert(i + 1, new Section { startIndex = section.endIndex, endIndex = sections[i + 1].startIndex });
+            }
+
+            if (i == sections.Count - 1 && section.endIndex < markdown.Length)
+            {
+                newSections.Add(new Section { startIndex = section.endIndex, endIndex = markdown.Length });
             }
         }
+
+        // print all section spans
+        for (var i = 0; i < newSections.Count; i++)
+        {
+            var section = newSections[i];
+            Debug.Log($"Section {i}: {section.startIndex} - {section.endIndex}");
+        }
+        Debug.Log($"Markdown length: {markdown.Length}");
+
+        sections = newSections;
 
         // if there are no sections, add the whole string as a section
         if (sections.Count == 0)
