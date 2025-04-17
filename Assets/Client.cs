@@ -233,7 +233,8 @@ public class Client : Editor
     public static async Task<bool> AddFileFromMemory(string fileName, string content)
     {
         // save file to temp directory
-        string tempPath = Path.Combine(Application.temporaryCachePath, fileName);
+        string tempPath = Path.Combine("Assets/AiderUI/Temp", fileName);
+        Directory.CreateDirectory(Path.GetDirectoryName(tempPath));
         File.WriteAllText(tempPath, content);
 
         // add file to context
