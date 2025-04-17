@@ -26,9 +26,19 @@ public class PlayerController : MonoBehaviour
         moveInput.x = Input.GetAxis("Horizontal");
         moveInput.y = Input.GetAxis("Vertical");
 
-        // Get input for look direction (Right Stick)
-        lookInput.x = Input.GetAxis("HorizontalLook");
-        lookInput.y = Input.GetAxis("VerticalLook");
+        // Get input for look direction (Right Stick - Direct Joystick Axes)
+        // Assumes standard mapping: Axis 4 for horizontal, Axis 5 for vertical (often inverted)
+        try
+        {
+            lookInput.x = Input.GetAxis("Joystick Axis 4");
+            lookInput.y = -Input.GetAxis("Joystick Axis 5"); // Negate Axis 5 as it's often inverted
+        }
+        catch (System.ArgumentException)
+        {
+            // Fallback or log error if axes aren't set up (though GetAxis usually returns 0 if not found)
+            Debug.LogWarning("Joystick Axis 4 or 5 not found. Look input may not work correctly.");
+            lookInput = Vector2.zero;
+        }
     }
 
     void FixedUpdate()
