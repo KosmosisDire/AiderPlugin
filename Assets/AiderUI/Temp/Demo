@@ -3,6 +3,16 @@
     "unityVersion": "6000.0.37f1",
     "objects": [
         {
+            "scenePath": "InputTester",
+            "tag": "Untagged",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform",
+                "InputTest"
+            ]
+        },
+        {
             "scenePath": "Main Camera",
             "tag": "MainCamera",
             "layer": "Default",

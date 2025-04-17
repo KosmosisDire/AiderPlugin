@@ -135,6 +135,7 @@ Important guidelines:
 Present your final command in a Unity code block.
 
 Put all new scripts in the Demo folder
+Use the new input system if input is needed, and hardcode inputs in the code unless the user asks otherwise. This is so no user setup is needed.
 """
 
 
