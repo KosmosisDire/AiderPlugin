@@ -3,19 +3,65 @@ using UnityEngine.InputSystem;
 
 public class InputTest : MonoBehaviour
 {
-    // Assign Input Actions in the Inspector (e.g., create them via Assets > Create > Input Actions)
+    // Assign the Input Action Asset in the Inspector
+    public InputActionAsset inputActions;
+
+    // Actions will be found and assigned in Awake
     [Header("Test Action")]
-    public InputAction testAction; // Example action
+    public InputAction testAction { get; private set; } // Example action
 
     [Header("Xbox Face Buttons")]
-    public InputAction buttonA;
-    public InputAction buttonB;
-    public InputAction buttonX;
-    public InputAction buttonY;
+    public InputAction buttonA { get; private set; }
+    public InputAction buttonB { get; private set; }
+    public InputAction buttonX { get; private set; }
+    public InputAction buttonY { get; private set; }
 
     [Header("Xbox Joysticks")]
-    public InputAction leftStick; // Expects Vector2
-    public InputAction rightStick; // Expects Vector2
+    public InputAction leftStick { get; private set; } // Expects Vector2
+    public InputAction rightStick { get; private set; } // Expects Vector2
+
+    // Name of the Action Map in your Input Action Asset
+    private const string ActionMapName = "Player"; // <<< ADJUST THIS IF YOUR MAP NAME IS DIFFERENT
+
+    void Awake()
+    {
+        if (inputActions == null)
+        {
+            Debug.LogError("Input Action Asset is not assigned in the Inspector!", this);
+            return;
+        }
+
+        // Find the action map
+        var actionMap = inputActions.FindActionMap(ActionMapName, throwIfNotFound: true);
+        if (actionMap == null)
+        {
+             Debug.LogError($"Action Map '{ActionMapName}' not found in the assigned Input Action Asset!", this);
+             return;
+        }
+
+
+        // Find and assign each action by name
+        // Using a helper function to reduce repetition
+        testAction = FindActionOrFail(actionMap, "TestAction"); // <<< ADJUST ACTION NAME IF NEEDED
+        buttonA = FindActionOrFail(actionMap, "ButtonA");       // <<< ADJUST ACTION NAME IF NEEDED
+        buttonB = FindActionOrFail(actionMap, "ButtonB");       // <<< ADJUST ACTION NAME IF NEEDED
+        buttonX = FindActionOrFail(actionMap, "ButtonX");       // <<< ADJUST ACTION NAME IF NEEDED
+        buttonY = FindActionOrFail(actionMap, "ButtonY");       // <<< ADJUST ACTION NAME IF NEEDED
+        leftStick = FindActionOrFail(actionMap, "LeftStick");   // <<< ADJUST ACTION NAME IF NEEDED
+        rightStick = FindActionOrFail(actionMap, "RightStick"); // <<< ADJUST ACTION NAME IF NEEDED
+
+        Debug.Log("Input Actions assigned from Asset.");
+    }
+
+    private InputAction FindActionOrFail(InputActionMap map, string actionName)
+    {
+        var action = map.FindAction(actionName);
+        if (action == null)
+        {
+            Debug.LogError($"Action '{actionName}' not found within Action Map '{map.name}'!", this);
+        }
+        return action;
+    }
 
 
     void OnEnable()
