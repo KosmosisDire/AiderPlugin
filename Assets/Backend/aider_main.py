@@ -365,11 +365,6 @@ def init(argv=None, force_git_root=None):
 
     model = Model(model=args.model)
 
-    summarizer = ChatSummary(
-        [model.weak_model, model],
-        args.max_chat_history_tokens or model.max_chat_history_tokens,
-    )
-
     repo = None
     if args.git:
         try:
@@ -395,15 +390,11 @@ def init(argv=None, force_git_root=None):
     coder = Coder.create(
         main_model=model,
         edit_format="unity",
+        auto_commits=False,
         fnames=fnames, 
         io=io,
         repo=repo,
         use_git=True,
-        summarizer=summarizer,
-        chat_language=args.chat_language,
-        cache_prompts=args.cache_prompts,
-        map_refresh=args.map_refresh,
-        map_tokens=args.map_tokens,
         verbose=args.verbose,
         dry_run=args.dry_run, # a dry run will cause it to not modify files
         stream=True)
