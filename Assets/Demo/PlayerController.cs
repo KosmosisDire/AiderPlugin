@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem; // Add this using statement
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
@@ -20,33 +21,27 @@ public class PlayerController : MonoBehaviour
         rb.angularDamping = 1.5f; // Angular drag for floaty rotation
     }
 
-    void Update()
+    // --- Input System Message Callbacks ---
+
+    // Called by PlayerInput component when Move action is triggered
+    public void OnMove(InputValue value)
     {
-        // Get input for movement (Left Stick)
-        moveInput.x = Input.GetAxis("Horizontal");
-        moveInput.y = Input.GetAxis("Vertical");
-
-        // Get input for look direction (Right Stick - Direct Joystick Axes)
-        // Assumes standard mapping: "4th axis" for horizontal, "5th axis" for vertical (often inverted)
-        try
-        {
-            // Try using generic axis names often mapped to the right stick
-            lookInput.x = Input.GetAxis("4th axis");
-            lookInput.y = -Input.GetAxis("5th axis"); // Negate 5th axis as it's often inverted
-
-            // Optional: Add a check if input remains zero, could indicate wrong axes
-            // if (lookInput.x == 0 && lookInput.y == 0) {
-            //     // Maybe try "3rd axis" and "4th axis" as alternatives for some platforms/controllers?
-            // }
-
-        }
-        catch (System.ArgumentException)
-        {
-            // Fallback or log error if axes aren't set up (though GetAxis usually returns 0 if not found)
-            Debug.LogWarning("Generic '4th axis' or '5th axis' not found or mapped correctly in Input Manager. Look input may not work.");
-            lookInput = Vector2.zero;
-        }
+        moveInput = value.Get<Vector2>();
     }
+
+    // Called by PlayerInput component when Look action is triggered
+    public void OnLook(InputValue value)
+    {
+        lookInput = value.Get<Vector2>();
+
+        // If using mouse delta for look, you might need different handling
+        // For example, accumulating delta or directly setting rotation.
+        // The current setup assumes joystick-like Vector2 input for look direction.
+        // If mouse delta feels too jerky, consider adjusting sensitivity in the Input Actions asset
+        // or implementing different rotation logic here based on device (Gamepad vs Mouse).
+    }
+
+    // --- Physics Update ---
 
     void FixedUpdate()
     {
