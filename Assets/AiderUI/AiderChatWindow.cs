@@ -1,14 +1,12 @@
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using System.Diagnostics; //Added for process management
-using System.IO; //Added for file path operation
-using System.Threading;
+using System.IO; 
 using Debug = UnityEngine.Debug;
 using System;
 using UnityEngine.SceneManagement;
+using System.Threading.Tasks;
 
 
 public class AiderChatWindow : EditorWindow
@@ -62,6 +60,8 @@ public class AiderChatWindow : EditorWindow
                     await command.Execute();
                 }
 
+                UpdateSendEnabled();
+
                 EditorPrefs.SetBool("Aider-ExecuteOnLoad", false);
             }
         }
@@ -103,6 +103,20 @@ public class AiderChatWindow : EditorWindow
         {
             multiline = true,
         };
+
+        textField.RegisterCallback<KeyDownEvent>(async evt =>
+        {
+            if (evt.keyCode == KeyCode.Return && !evt.shiftKey && !string.IsNullOrWhiteSpace(textField.value) && !Client.IsStreaming)
+            {
+                await SendCurrentMessage();
+            }
+        });
+
+        textField.RegisterValueChangedCallback(evt =>
+        {
+            UpdateSendEnabled();
+        }); 
+
         textField.AddToClassList("chat-input");
         textField.SetPlaceholderText("How can I help you?");
         inputWrapper.Add(textField);
@@ -148,15 +162,15 @@ public class AiderChatWindow : EditorWindow
         settingsButton.tooltip = "Settings";
         settingsButton.AddToClassList("settings-button");
         header.Add(settingsButton);
+
         // add usage report label
         sessionCostLabel = new Label();
         sessionCostLabel.AddToClassList("session-cost-label");
-        //sessionCostLabel.tooltip = "Total session cost";
         header.Add(sessionCostLabel);
 
         // add floating history button at top left corner of window
         historyButton = new Button();
-        historyButton.clickable.clicked += () => 
+        historyButton.clickable.clicked += () =>
         {
             if (HistoryOpen)
             {
@@ -200,6 +214,18 @@ public class AiderChatWindow : EditorWindow
 
         if (success) Debug.Log("GameObject menu updated");
         else Debug.LogError("Failed to update GameObject menu");
+    }
+
+    private void UpdateSendEnabled()
+    {
+        if (string.IsNullOrWhiteSpace(textField.value) || Client.IsStreaming)
+        {
+            sendButton.SetEnabled(false);
+        }
+        else
+        {
+            sendButton.SetEnabled(true);
+        }
     }
 
     public async Task SendCurrentMessage()
@@ -334,6 +360,7 @@ public class AiderChatWindow : EditorWindow
 
     private async void HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
     {
+        
         var userMsg = chatList[^2];
         userMsg.Tokens = response.Header.TokensSent;
         messageEl.Tokens = response.Header.TokensReceived;
@@ -360,6 +387,8 @@ public class AiderChatWindow : EditorWindow
             {
                 await command.Execute();
             }
+
+            UpdateSendEnabled();
         }
     }
 

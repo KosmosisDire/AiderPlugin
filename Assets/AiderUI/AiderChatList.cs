@@ -36,6 +36,14 @@ public class AiderChatList : ScrollView, IEnumerable<AiderChatMessage>
 
     public void SerializeChat()
     {
+        if (chatList.Count == 0)
+        {
+            return;
+        }
+
+        chatTitle = chatList[0].Message.Split('\n')[0].Trim();
+        chatTitle = chatTitle[..Mathf.Min(60, chatTitle.Length)];
+
         var json = JsonUtility.ToJson(this);
         System.IO.File.WriteAllText(SavePath, json);
     }
@@ -93,12 +101,6 @@ public class AiderChatList : ScrollView, IEnumerable<AiderChatMessage>
 
     public async void AddMessage(string content, bool isUser, string placeholder, int tokens = 0, float cost = 0)
     {
-        if (chatList.Count == 0)
-        {
-            chatTitle = content.Split('\n')[0].Trim();
-            chatTitle = chatTitle[..Mathf.Min(20, chatTitle.Length)];
-        }
-
         var msg = new AiderChatMessage(content, isUser, placeholder, tokens, cost);
         this.Add(msg);
         chatList.Add(msg);

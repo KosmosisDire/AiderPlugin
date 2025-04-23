@@ -11,6 +11,7 @@ public class Client : Editor
 {
     static TcpClient client;
     static NetworkStream stream;
+    public static bool IsStreaming {get; private set; } = false;
 
     static bool IsConnected => client != null && stream != null && stream.CanWrite;
 
@@ -179,12 +180,14 @@ public class Client : Editor
     {
         while (!cancellationToken.IsCancellationRequested)
         { 
+            IsStreaming = true;
+
             AiderResponse response = await ReceiveSingleResponseAsync(0, cancellationToken);
             callback?.Invoke(response);
 
             if (response.Header.IsError || response.Header.IsLast)
             {
-                //Debug.Log("Received last message or error, stopping receive loop.");
+                IsStreaming = false;
                 return;
             }
         }
@@ -193,6 +196,8 @@ public class Client : Editor
         {
             Debug.Log("Receive loop cancelled.");
         }
+        
+        IsStreaming = false;
     }
 
     /// <returns>Get a list of all files currently in the context</returns>

@@ -588,26 +588,12 @@ public class SetComponentPropertyCommand : AiderUnityCommandBase
                         var property = componentType.GetProperty(propertyPath);
                         var field = componentType.GetField(propertyPath);
 
-                        if (property == null && field == null)
-                        {
-                            // try ignoring case
-                            property = componentType.GetProperty(propertyPath, BindingFlags.IgnoreCase);
-                            field = componentType.GetField(propertyPath, BindingFlags.IgnoreCase);
-                        }
-
                         if (propertyPath.StartsWith("m_") && property == null && field == null)
                         {
-                            // try to find without the m_ prefix
                             var propertyName = propertyPath[2..];
+                            propertyName = char.ToLower(propertyName[0]) + propertyName[1..];
                             property = componentType.GetProperty(propertyName);
                             field = componentType.GetField(propertyName);
-
-                            if (property == null && field == null)
-                            {
-                                // try ignoring case
-                                property = componentType.GetProperty(propertyName, BindingFlags.IgnoreCase);
-                                field = componentType.GetField(propertyName, BindingFlags.IgnoreCase);
-                            }
                         }
 
                         if (property != null)
