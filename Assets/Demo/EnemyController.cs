@@ -7,7 +7,7 @@ public class EnemyController : MonoBehaviour
     [Header("Stats")]
     public int health = 100; // Default health
     public int damageFromPlayerBullet = 10; // Damage taken from a player bullet
-    public string playerBulletTag = "Bullet"; // Tag to identify player bullets
+    public string playerBulletTag = "PlayerBullet"; // Tag to identify player bullets
     public int scoreValue = 10; // Score awarded when this enemy is destroyed
 
     [Header("Movement")]

@@ -14,7 +14,6 @@ public static class FindObjectUtil
             .FirstOrDefault();
     }
 
-    // Searches children, not descendants.
     public static Transform FindChildWithName(Transform parent, string query) {
         for (int i = 0; i < parent.transform.childCount; ++i) {
             var t = parent.transform.GetChild(i);
@@ -25,11 +24,20 @@ public static class FindObjectUtil
         return null;
     }
 
-    // Like FindObjectUtil.FindObjectWithScenePath when using paths, but includes inactive.
-    // Example: FindObjectWithScenePath("Geometry/building01/floor02")
-    public static GameObject FindObjectWithScenePath(string path)
+    public static GameObject FindObject(string path)
     {
         Debug.Assert(!string.IsNullOrWhiteSpace(path), "Must pass valid name");
+
+        if (path.StartsWith("Assets/") || path.StartsWith("Packages/") || path.EndsWith(".prefab"))
+        {
+            // find in asset directory
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab != null) {
+                return prefab;
+            }
+            Debug.LogError($"Failed to load prefab at path: {path}");
+            return null;
+        }
 
         if (path[0] == '/') {
             path = path.Substring(1);

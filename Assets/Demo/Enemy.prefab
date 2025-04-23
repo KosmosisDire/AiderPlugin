@@ -134,9 +134,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 724ed6acc0cf1d843a3180dc5724457b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 100
+  health: 30
   damageFromPlayerBullet: 10
-  playerBulletTag: Bullet
+  playerBulletTag: PlayerBullet
+  scoreValue: 10
   moveSpeed: 3
   stoppingDistance: 5
   bulletPrefab: {fileID: 7157331012910984583, guid: 467800af5c2aa51429a7443e6c791016, type: 3}

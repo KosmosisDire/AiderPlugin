@@ -193,7 +193,7 @@ public class AddComponentCommand : AiderUnityCommandBase
     protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing AddComponentCommand: {objectPath} with component {componentType}");
-        GameObject targetObject = FindObjectUtil.FindObjectWithScenePath(objectPath);
+        GameObject targetObject = FindObjectUtil.FindObject(objectPath);
         if (targetObject != null)
         {
             Type type = UnityJsonCommandParser.FindType(componentType, false, true);
@@ -260,7 +260,7 @@ public class AddObjectCommand : AiderUnityCommandBase
         if (scenePath.LastIndexOf('/') > 0)
         {
             var parentPath = scenePath.Substring(0, scenePath.LastIndexOf('/'));
-            var parentObject = FindObjectUtil.FindObjectWithScenePath(parentPath);
+            var parentObject = FindObjectUtil.FindObject(parentPath);
             if (parentObject != null)
             {
                 newObject.transform.SetParent(parentObject.transform, true);
@@ -521,7 +521,7 @@ public class SetComponentPropertyCommand : AiderUnityCommandBase
         else if (typeof(UnityEngine.Object).IsAssignableFrom(type) && IsTransformPath(value))
         {
             Debug.Log($"Loading transform at path: {value}");
-            var go = FindObjectUtil.FindObjectWithScenePath(value);
+            var go = FindObjectUtil.FindObject(value);
             if (go == null)
             {
                 throw new ArgumentException($"GameObject at path '{value}' not found.");
@@ -573,7 +573,7 @@ public class SetComponentPropertyCommand : AiderUnityCommandBase
     protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing SetComponentPropertyCommand: {objectPath}, {componentType}, {propertyPath}");
-        GameObject targetObject = FindObjectUtil.FindObjectWithScenePath(objectPath);
+        GameObject targetObject = FindObjectUtil.FindObject(objectPath);
         if (targetObject != null)
         {
             Type type = UnityJsonCommandParser.FindType(componentType, false, true);
@@ -680,7 +680,7 @@ public class SetComponentPropertyCommand : AiderUnityCommandBase
 
     private bool IsTransformPath(string value)
     {
-        return value.Contains("/") && FindObjectUtil.FindObjectWithScenePath(value) != null;
+        return value.Contains("/") && FindObjectUtil.FindObject(value) != null;
     }
 
     public override VisualElement BuildDisplay()
@@ -705,7 +705,7 @@ public class DeleteObjectCommand : AiderUnityCommandBase
     protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing DeleteObjectCommand: {objectPath}");
-        GameObject targetObject = FindObjectUtil.FindObjectWithScenePath(objectPath);
+        GameObject targetObject = FindObjectUtil.FindObject(objectPath);
         if (targetObject != null)
         {
             UnityEngine.Object.DestroyImmediate(targetObject);
@@ -741,7 +741,7 @@ public class CreatePrefabCommand : AiderUnityCommandBase
     protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing CreatePrefabCommand: {objectPath} to {prefabPath}");
-        GameObject targetObject = FindObjectUtil.FindObjectWithScenePath(objectPath);
+        GameObject targetObject = FindObjectUtil.FindObject(objectPath);
         if (targetObject != null)
         {
             try
@@ -819,7 +819,7 @@ public class InstantiatePrefabCommand : AiderUnityCommandBase
                 // Set parent if provided
                 if (!string.IsNullOrEmpty(parentPath))
                 {
-                    GameObject parentObject = FindObjectUtil.FindObjectWithScenePath(parentPath);
+                    GameObject parentObject = FindObjectUtil.FindObject(parentPath);
                     if (parentObject != null)
                     {
                         instance.transform.SetParent(parentObject.transform, false);
@@ -869,7 +869,7 @@ public class SetParentCommand : AiderUnityCommandBase
     protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing SetParentCommand: {objectPath} to parent {parentPath}");
-        GameObject targetObject = FindObjectUtil.FindObjectWithScenePath(objectPath);
+        GameObject targetObject = FindObjectUtil.FindObject(objectPath);
         if (targetObject != null)
         {
             GameObject parentObject = null;
@@ -881,7 +881,7 @@ public class SetParentCommand : AiderUnityCommandBase
                 return new CommandFeedback($"Unparented {objectPath}", CommandStatus.Success);
             }
             
-            parentObject = FindObjectUtil.FindObjectWithScenePath(parentPath);
+            parentObject = FindObjectUtil.FindObject(parentPath);
             if (parentObject != null)
             {
                 targetObject.transform.SetParent(parentObject.transform, worldPositionStays);

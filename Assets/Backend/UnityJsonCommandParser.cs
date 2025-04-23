@@ -118,7 +118,7 @@ class UnityJsonCommandParser
                             break;
                         case "setComponentProperty":
                             var setPropCommand = JsonUtility.FromJson<SetComponentPropertyCommand>(commandBlock);
-                            var valueString = Regex.Match(commandBlock, @"""value"":(.+)").Groups[1].Value.Trim();
+                            var valueString = Regex.Match(commandBlock, @"""value""\s*:\s*((?:\{[^{}]*\})|""[^""]*"")").Groups[1].Value.Trim();
                             valueString = valueString.Trim('"');
                             setPropCommand.value = valueString;
                             command = setPropCommand;
