@@ -1,3 +1,4 @@
+import io as stdio
 import os
 import sys
 from aider.coders import Coder
@@ -8,6 +9,15 @@ from aider.args import get_parser
 from pathlib import Path
 from dotenv import load_dotenv
 from aider.repo import ANY_GIT_ERROR, GitRepo
+import aider.coders as coders
+from unity_coder import UnityCoder
+from aider.watch import FileWatcher
+from aider.history import ChatSummary
+
+total_cost = 0.0
+message_cost = 0.0
+tokens_sent = 0
+tokens_received = 0
 
 def check_config_files_for_yes(config_files):
     found = False
@@ -99,8 +109,126 @@ def guessed_wrong_repo(io, git_root, fnames, git_dname):
     return str(check_repo)
 
 
-coder: Coder = None
+def check_gitignore(git_root, io, ask=True):
+    if not git_root:
+        return
 
+    try:
+        repo = git.Repo(git_root)
+        patterns_to_add = []
+
+        if not repo.ignored(".aider"):
+            patterns_to_add.append(".aider*")
+
+        env_path = Path(git_root) / ".env"
+        if env_path.exists() and not repo.ignored(".env"):
+            patterns_to_add.append(".env")
+
+        if not patterns_to_add:
+            return
+
+        gitignore_file = Path(git_root) / ".gitignore"
+        if gitignore_file.exists():
+            try:
+                content = io.read_text(gitignore_file)
+                if content is None:
+                    return
+                if not content.endswith("\n"):
+                    content += "\n"
+            except OSError as e:
+                io.tool_error(f"Error when trying to read {gitignore_file}: {e}")
+                return
+        else:
+            content = ""
+    except ANY_GIT_ERROR:
+        return
+
+    if ask:
+        io.tool_output("You can skip this check with --no-gitignore")
+        if not io.confirm_ask(f"Add {', '.join(patterns_to_add)} to .gitignore (recommended)?"):
+            return
+
+    content += "\n".join(patterns_to_add) + "\n"
+
+    try:
+        io.write_text(gitignore_file, content)
+        io.tool_output(f"Added {', '.join(patterns_to_add)} to .gitignore")
+    except OSError as e:
+        io.tool_error(f"Error when trying to write to {gitignore_file}: {e}")
+        io.tool_output(
+            "Try running with appropriate permissions or manually add these patterns to .gitignore:"
+        )
+        for pattern in patterns_to_add:
+            io.tool_output(f"  {pattern}")
+
+
+def make_new_repo(git_root, io):
+    try:
+        repo = git.Repo.init(git_root)
+        check_gitignore(git_root, io, False)
+    except ANY_GIT_ERROR as err:  # issue #1233
+        io.tool_error(f"Unable to create git repo in {git_root}")
+        io.tool_output(str(err))
+        return
+
+    io.tool_output(f"Git repository created in {git_root}")
+    return repo
+
+def setup_git(git_root, io):
+    if git is None:
+        return
+
+    try:
+        cwd = Path.cwd()
+    except OSError:
+        cwd = None
+
+    repo = None
+
+    if git_root:
+        try:
+            repo = git.Repo(git_root)
+        except ANY_GIT_ERROR:
+            pass
+    elif cwd == Path.home():
+        io.tool_warning(
+            "You should probably run aider in your project's directory, not your home dir."
+        )
+        return
+    elif cwd and io.confirm_ask(
+        "No git repo found, create one to track aider's changes (recommended)?"
+    ):
+        git_root = str(cwd.resolve())
+        repo = make_new_repo(git_root, io)
+
+    if not repo:
+        return
+
+    try:
+        user_name = repo.git.config("--get", "user.name") or None
+    except git.exc.GitCommandError:
+        user_name = None
+
+    try:
+        user_email = repo.git.config("--get", "user.email") or None
+    except git.exc.GitCommandError:
+        user_email = None
+
+    if user_name and user_email:
+        return repo.working_tree_dir
+
+    with repo.config_writer() as git_config:
+        if not user_name:
+            git_config.set_value("user", "name", "Your Name")
+            io.tool_warning('Update git name with: git config user.name "Your Name"')
+        if not user_email:
+            git_config.set_value("user", "email", "you@example.com")
+            io.tool_warning('Update git email with: git config user.email "you@example.com"')
+
+    return repo.working_tree_dir
+
+
+coder: Coder = None
 def init(argv=None, force_git_root=None):
     """
     Initialize the coder. Use the send_message_get_output function to send messages to the coder.
@@ -224,18 +352,87 @@ def init(argv=None, force_git_root=None):
         if right_repo_root:
             return init(argv, right_repo_root)
         
+    if args.git:
+        git_root = setup_git(git_root, io)
+        if args.gitignore:
+            check_gitignore(git_root, io)
+
     if (args.dry_run):
         print("Dry run mode enabled. No files will be modified!")
 
+    if args.cache_prompts and args.map_refresh == "auto":
+        args.map_refresh = "files"
+
     model = Model(model=args.model)
+
+    repo = None
+    if args.git:
+        try:
+            repo = GitRepo(
+                io,
+                fnames,
+                git_dname,
+                args.aiderignore,
+                models=model.commit_message_models(),
+                attribute_author=args.attribute_author,
+                attribute_committer=args.attribute_committer,
+                attribute_commit_message_author=args.attribute_commit_message_author,
+                attribute_commit_message_committer=args.attribute_commit_message_committer,
+                commit_prompt=args.commit_prompt,
+                subtree_only=args.subtree_only,
+            )
+        except FileNotFoundError:
+            pass
+
+
+    coders.__all__.append(UnityCoder)
+    print(args.edit_format)
     coder = Coder.create(
         main_model=model,
-        edit_format=args.edit_format,
+        edit_format="unity",
+        auto_commits=False,
         fnames=fnames, 
-        io=io, 
+        io=io,
+        repo=repo,
+        use_git=True,
+        verbose=args.verbose,
         dry_run=args.dry_run, # a dry run will cause it to not modify files
-        stream=True,
-        use_git=True)
+        stream=True)
+    
+    ignores = []
+    if git_root:
+        ignores.append(str(Path(git_root) / ".gitignore"))
+    if args.aiderignore:
+        ignores.append(args.aiderignore)
+
+    if args.watch_files:
+        file_watcher = FileWatcher(
+            coder,
+            gitignores=ignores,
+            verbose=args.verbose,
+            root=str(Path.cwd()) if args.subtree_only else None,
+        )
+        coder.file_watcher = file_watcher
+    
+    # calling this forces a repo map update at the start
+    print("Initializing coder...")
+    coder.format_messages()
+    print("Coder initialized.")
+
+    # monkey patch function to extract the usage report before it is cleared
+    original_usage_report = coder.show_usage_report
+    def show_usage_report():
+        global total_cost, message_cost, tokens_sent, tokens_received
+        global coder
+        total_cost = coder.total_cost
+        message_cost = coder.message_cost
+        tokens_sent = coder.message_tokens_sent
+        tokens_received = coder.message_tokens_received
+
+        original_usage_report()
+        
+    coder.show_usage_report = show_usage_report
+
 
 def send_message_get_output(message):
     """
@@ -254,6 +451,10 @@ def send_message_get_output(message):
     coder.init_before_message()
     message = coder.preproc_user_input(message)
     coder.reflected_message = None
+    if (message is None or len(message) == 0):
+        print("Empty message, nothing to do.")
+        return "..."
+    
     yield from coder.send_message(message)
 
 if __name__ == "__main__":

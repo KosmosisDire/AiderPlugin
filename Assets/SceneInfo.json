@@ -1,0 +1,224 @@
+{
+    "sceneName": "Demo",
+    "unityVersion": "6000.0.37f1",
+    "objects": [
+        {
+            "scenePath": "Enemy",
+            "tag": "Enemy",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform",
+                "SpriteRenderer",
+                "EnemyController",
+                "Rigidbody2D",
+                "PolygonCollider2D"
+            ]
+        },
+        {
+            "scenePath": "Enemy/FirePoint",
+            "tag": "Untagged",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform"
+            ]
+        },
+        {
+            "scenePath": "EventSystem",
+            "tag": "Untagged",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform",
+                "EventSystem",
+                "StandaloneInputModule"
+            ]
+        },
+        {
+            "scenePath": "Main Camera",
+            "tag": "MainCamera",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform",
+                "Camera",
+                "AudioListener",
+                "SmoothFollow"
+            ]
+        },
+        {
+            "scenePath": "Main Camera/EnemySpawner",
+            "tag": "Untagged",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform",
+                "EnemySpawner"
+            ]
+        },
+        {
+            "scenePath": "Main Camera/Particle System",
+            "tag": "Untagged",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform",
+                "ParticleSystem",
+                "ParticleSystemRenderer"
+            ]
+        },
+        {
+            "scenePath": "PlayerShip",
+            "tag": "Player",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform",
+                "SpriteRenderer",
+                "SpaceshipController",
+                "Rigidbody2D",
+                "PolygonCollider2D"
+            ]
+        },
+        {
+            "scenePath": "PlayerShip/FirePoint",
+            "tag": "Untagged",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform"
+            ]
+        },
+        {
+            "scenePath": "UICanvas",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "Canvas",
+                "CanvasScaler",
+                "GraphicRaycaster",
+                "UIManager"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/GameOverPanel",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": false,
+            "components": [
+                "RectTransform",
+                "CanvasRenderer",
+                "Image"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/GameOverPanel/FinalScoreText",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "CanvasRenderer",
+                "TextMeshProUGUI"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/GameOverPanel/GameOverText",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "CanvasRenderer",
+                "TextMeshProUGUI"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/GameOverPanel/RestartButton",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "CanvasRenderer",
+                "Image",
+                "Button"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/GameOverPanel/RestartButton/Text (TMP)",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "CanvasRenderer",
+                "TextMeshProUGUI"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/ScoreText",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "CanvasRenderer",
+                "TextMeshProUGUI"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/Slider",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "Slider"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/Slider/Background",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "CanvasRenderer",
+                "Image"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/Slider/Fill Area",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/Slider/Fill Area/Fill",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "CanvasRenderer",
+                "Image"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/Slider/Handle Slide Area",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform"
+            ]
+        }
+    ]
+}

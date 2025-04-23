@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public enum AiderCommand
@@ -87,12 +86,34 @@ public static class AiderCommandHelper
     }
 }
 
+public struct AiderRequestHeader
+{
+    public static readonly int HeaderSize = 4 + 4; // contentLength + headerMarker
+    public int ContentLength { get; set; }
+
+    public AiderRequestHeader(int contentLength)
+    {
+        ContentLength = contentLength;
+    }
+
+    public byte[] Serialize()
+    {
+        var byteList = new List<byte>();
+        byteList.AddRange(BitConverter.GetBytes(987654321)); // header marker
+        byteList.AddRange(BitConverter.GetBytes(this.ContentLength));
+        return byteList.ToArray();
+    }
+}
+
 public struct AiderRequest
 {
+    public AiderRequestHeader Header { get; set; }
     public string Content { get; set; }
 
     public AiderRequest(AiderCommand command, string content)
     {
+        Header = new();
+
         if (command == AiderCommand.None)
         {
             Content = content;
@@ -105,58 +126,96 @@ public struct AiderRequest
     public AiderRequest(string content)
     {
         Content = content;
+        Header = new();
     }
 
     // see interface.py for the deserialization function
-    public readonly byte[] Serialize()
+    public byte[] Serialize()
     {
+        Header = new (Content.Length);
+
         var byteList = new List<byte>();
-        byteList.AddRange(BitConverter.GetBytes(Content.Length));
+        byteList.AddRange(Header.Serialize());
         byteList.AddRange(System.Text.Encoding.UTF8.GetBytes(Content));
         return byteList.ToArray();
     }
 }
 
+public struct AiderResponseHeader
+{
+    public static readonly int HeaderSize = 4 + 4 + 1 + 1 + 1 + 4 + 4 + 4 + 4; // headerMarker + contentLength + last + isDiff + isError + tokensSent + tokensReceived + messageCost + sessionCost
+    public int ContentLength { get; set; }
+    public bool IsLast { get; set; }
+    public bool IsDiff { get; set; }
+    public bool IsError { get; set; }
+    public int TokensSent { get; set; }
+    public int TokensReceived { get; set; }
+    public float MessageCost { get; set; }
+    public float SessionCost { get; set; }
+
+    public static AiderResponseHeader Deserialize(byte[] data)
+    {
+        int pos = 0;
+        var headerMarker = BitConverter.ToInt32(data, pos); pos += 4;
+        if (headerMarker != 123456789) // this checks if the header starts with a specific number so we know we are reading the correct data. If it is not then somehow we are not reading correct data here.
+        {
+            throw new Exception($"Invalid header marker: {headerMarker}. Expected 123456789.");
+        }
+
+        var contentLength = BitConverter.ToInt32(data, pos); pos += 4;
+        var last = BitConverter.ToBoolean(data, pos); pos += 1;
+        var isDiff = BitConverter.ToBoolean(data, pos); pos += 1;
+        var isError = BitConverter.ToBoolean(data, pos); pos += 1;
+        var tokensSent = BitConverter.ToInt32(data, pos); pos += 4;
+        var tokensReceived = BitConverter.ToInt32(data, pos); pos += 4;
+        var messageCost = BitConverter.ToSingle(data, pos); pos += 4;
+        var sessionCost = BitConverter.ToSingle(data, pos); pos += 4;
+
+        return new AiderResponseHeader
+        {
+            ContentLength = contentLength,
+            IsLast = last,
+            IsDiff = isDiff,
+            IsError = isError,
+            TokensSent = tokensSent,
+            TokensReceived = tokensReceived,
+            MessageCost = messageCost,
+            SessionCost = sessionCost
+        };
+    }
+}
+
 public struct AiderResponse
 {
+    public AiderResponseHeader Header { get; set; }
     public string Content { get; set; }
-    public bool Last { get; set; }
-    public bool IsError { get; set; }
-    public string UsageReport { get; set; }
-    private string[] ParsedDataGroups => Regex.Match(UsageReport, @"^.+? +(\d.+?) .+?(\d.+?) .+?(\p{Sc}[\d\.\,]+?) .+?(\p{Sc}[\d\.\,]+?) .+").Groups.Select(g => g.Value).ToArray();
-    public string TokenCountSent => ParsedDataGroups.Length > 1 ? ParsedDataGroups[1] : "0";
-    public string TokenCountReceived => ParsedDataGroups.Length > 2 ? ParsedDataGroups[2] : "0";
-    public string CostMessage => ParsedDataGroups.Length > 3 ? ParsedDataGroups[3] : "0";
-    public string CostSession => ParsedDataGroups.Length > 4 ? ParsedDataGroups[4] : "0";
 
-    public AiderResponse(string content, bool last, bool isError, string usageReport)
+    public bool HasFileChanges => Regex.IsMatch(Content, @"<<<<<<< SEARCH[\n\r]([\s\S]*?)=======[\n\r]([\s\S]+?)[\n\r]>>>>>>> REPLACE", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+    public AiderResponse(string content, AiderResponseHeader header)
     {
+        
         Content = content;
-        Last = last;
-        IsError = isError;
-        UsageReport = usageReport;
+        Header = header;
 
-        if (isError)
+        if (header.IsError)
         {
             Debug.LogError(content);
         }
     }
 
-    public static AiderResponse Deserialize(byte[] data)
+    public static AiderResponse Deserialize(byte[] data, AiderResponseHeader header)
     {
         int pos = 0;
-        var contentLength = BitConverter.ToInt32(data, pos); pos += 4;
+        var contentLength = header.ContentLength;
         var content = System.Text.Encoding.UTF8.GetString(data, pos, contentLength); pos += contentLength;
-        var last = BitConverter.ToBoolean(data, pos); pos += 1;
-        var error = BitConverter.ToBoolean(data, pos); pos += 1;
-        int usageReportLength = BitConverter.ToInt32(data, pos); pos += 4;
-        string usageReport = System.Text.Encoding.UTF8.GetString(data, pos, usageReportLength); // pos += usageReportLength;
-        return new AiderResponse(content, last, error, usageReport);
+
+        return new AiderResponse(content, header);
     }
 
     public static AiderResponse Error(string content)
     {
-        return new AiderResponse(content, true, true, string.Empty);
+        return new AiderResponse(content, new AiderResponseHeader{ IsError = true });
     }
 }
 

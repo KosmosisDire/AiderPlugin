@@ -8,8 +8,9 @@
     --accent-color: rgb(54, 101, 255);
     --surface-color: rgb(20, 20, 20);
     --surface-color-muted: rgb(32, 32, 32);
+    --surface-color-transparent: rgba(32, 32, 32, 0.2);
     --bright-text-color: rgba(255, 255, 255, 0.95);
-    --muted-text-color: rgba(255, 255, 255, 0.2);
+    --muted-text-color: rgba(255, 255, 255, 0.4);
     --red-text-color: rgb(255, 107, 94);
     --background-color: rgb(43, 43, 43);
 }
@@ -23,8 +24,9 @@
     --accent-color: rgb(189, 110, 0);
     --surface-color: rgb(219, 219, 219);
     --surface-color-muted: rgb(172, 172, 172);
+    --surface-color-transparent: rgba(172, 172, 172, 0.2);
     --bright-text-color: rgb(0, 0, 0);
-    --muted-text-color: rgb(62, 4, 0);
+    --muted-text-color: rgba(0, 0, 0, 0.4);
     --background-color: rgb(255, 255, 255);
 }   
 
@@ -42,9 +44,16 @@
     --empty-icon: url("/Assets/Editor/Lucide/bookmark-x.png");
     --unity-icon: url("/Assets/Editor/Lucide/unity.png");
     --trash-icon: url("/Assets/Editor/Lucide/trash-2.png");
+    --play-icon: url("/Assets/Editor/Lucide/play.png");
 }
 
 /* Layout Elements */
+.markdown-section
+{
+    flex-direction: column;
+    margin-bottom: 5px;
+}
+
 .chat-container
 {
     flex-shrink: 1;
@@ -210,6 +219,13 @@
 {
     background-color: var(--user-color-muted);
     margin-left: 60px;
+}
+
+.message-container.error-message
+{
+    border-color: var(--red-text-color);
+    background-color: rgba(255, 107, 94, 0.1);
+    color: var(--red-text-color);
 }
 
 .message-container #unity-text-input
@@ -462,6 +478,24 @@
     -unity-font-definition: url("JetBrainsMono.asset");
 }
 
+.language-label
+{
+    background-color: var(--surface-color-muted);
+    border-radius: 5px;
+    padding: 5px;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    opacity: 0.2;
+    transition: opacity 0.2s;
+}
+
+.language-label:hover
+{
+    opacity: 1;
+}
+
+
 .blockquote
 {
     background-color: var(--surface-color-muted);
@@ -520,4 +554,97 @@
 {
     background-color: var(--surface-color-muted);
     border-color: var(--muted-text-color);
+}
+
+/* Commands */
+
+.command-container
+{
+    background-color: var(--surface-color);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: var(--muted-text-color);
+    padding: 10px;
+    font-size: 14px;
+    -unity-font: url("JetBrainsMono.ttf");
+    -unity-font-definition: url("JetBrainsMono.asset");
+}
+
+.command-view .unity-label
+{
+    color: var(--muted-text-color);
+}
+
+.command-container .output-log
+{
+    display: none;
+    background-color: var(--surface-color-transparent);
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.command-container .output-log.has-output
+{
+    display: flex;
+}
+
+.command-container.command-executing
+{
+    background-color: rgba(70, 190, 254, 0.2);
+    border-color: rgba(136, 213, 254, 0.5);
+}
+
+.command-container.command-finished.command-success
+{
+    background-color: rgba(70, 254, 70, 0.2);
+    border-color: rgba(136, 254, 136, 0.5);
+}
+
+.command-container.command-finished.command-warning
+{
+    background-color: rgba(254, 255, 70, 0.2);
+    border-color: rgba(254, 255, 136, 0.5);
+}
+
+.command-container.command-finished.command-error
+{
+    background-color: rgba(255, 70, 70, 0.2);
+    border-color: rgba(255, 136, 136, 0.5);
+}
+
+.command-container *
+{
+    white-space: normal;
+}
+
+.command-title
+{
+    font-size: 14px;
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+}
+
+.command-execute-button, .command-source-button
+{
+    position: absolute;
+    top: 10px;
+    width: 25px;
+    height: 25px;
+    background-image: var(--play-icon);
+    background-color: var(--surface-color);
+    background-size: 35%;
+}
+
+.command-execute-button
+{
+    right: 10px;
+}
+
+.command-source-button
+{
+    right: 45px;
+    background-image: var(--copy-icon);
+    background-size: 50%;
 }

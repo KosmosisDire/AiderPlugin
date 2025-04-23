@@ -74,6 +74,7 @@ crashlytics-build.properties
 
 # aider
 .aider*
+!.aiderignore
 
 # python
 __pycache__/
@@ -82,4 +83,5 @@ __pycache__.meta
 # upgrade log
 UpgradeLog.html
 
-Assets/AiderUI/chats/*
+*AiderChat.json
+*AiderChat.json.meta

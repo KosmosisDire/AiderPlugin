@@ -1,15 +1,16 @@
 using UnityEngine;
 using System.IO;
 using UnityEditor;
+using System.Threading.Tasks;
 public static class ProjectWindowContextMenu
 {
     [MenuItem("Assets/Add to Aider Context", false, 20)]
-    private static void AddtoContext()
+    private static async Task AddtoContext()
     {
         string path = AssetDatabase.GetAssetPath(Selection.activeObject);
-        Client.AddFile(path);
+        await Client.AddFile(path);
         AiderChatWindow window = EditorWindow.GetWindow<AiderChatWindow>();
-        window.contextList.Update(Client.GetContextList());
+        window.contextList.Update(await Client.GetContextList());
         Debug.Log($"Added {path} to the context");
     }
 

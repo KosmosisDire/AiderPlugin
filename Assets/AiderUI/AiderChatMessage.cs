@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -8,18 +9,67 @@ public class AiderChatMessage : VisualElement
 {
     [SerializeField]
     private string _message;
+    private bool isPlaceholder = false;
     public string Message
     {
-        get => _message;
-        private set => _message = value;
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_message) || isPlaceholder)
+            {
+                return string.Empty;
+            }
+            else
+            {
+                return _message;
+            }
+        }
+        set 
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                _message = placeholder;
+                isPlaceholder = true;
+            }
+            else
+            {
+                isPlaceholder = false;
+                _message = value;
+            }
+
+            Reparse();
+        }
     }
     [SerializeField]
     public bool isUser;
+    [SerializeField]
+    private int _tokens;
+    public int Tokens
+    {
+        get => _tokens;
+        set
+        {
+            _tokens = value;
+            SetCostLabel(_tokens, _cost);
+        }
+    }
+
+    [SerializeField]
+    private float _cost;
+    public float Cost
+    {
+        get => _cost;
+        set
+        {
+            _cost = value;
+            SetCostLabel(_tokens, _cost);
+        }
+    }
 
     public readonly string placeholder; // show placeholder if the message in null or whitespace
     public TextField label;
     public Button copyButton;
     public Label usageLabel;
+    public List<AiderUnityCommandBase> commands;
 
     async void CopyToClipboard(bool showConfirm = true)
     {
@@ -32,29 +82,51 @@ public class AiderChatMessage : VisualElement
         }
     }
 
-    public void SetMessageLabel(string tokens, string msgCost = "")
+    private void SetCostLabel(int tokens, float msgCost = 0)
     {
-        var content = tokens + " tokens";
-        usageLabel = new Label();
-        if (!isUser) {
-            usageLabel.tooltip = "Tokens received and message cost";
-            content += " • " + msgCost;
+        static string FormatTokens(int number)
+        {
+            if (number < 1000)
+            {
+                return number.ToString("0");
+            }
+            else if (number < 1000000)
+            {
+                return (number / 1000.0).ToString("0.#k");
+            }
+            else
+            {
+                return (number / 1000000.0).ToString("0.#m");
+            }
         }
-        else {
+
+        var content = FormatTokens(tokens) + " tokens";
+        usageLabel ??= new Label();
+        usageLabel.AddToClassList("tokens-label");
+        this.Add(usageLabel);
+
+        if (!isUser)
+        {
+            content += " • " + msgCost.ToString("C2"); // format as currency
+            usageLabel.tooltip = "Tokens received and message cost";
+        }
+        else
+        {
             usageLabel.tooltip = "Tokens sent including context";
         }
-        usageLabel.AddToClassList("tokens-label");
+
         usageLabel.text = content;
-        this.Add(usageLabel);
     }
 
-    public AiderChatMessage(string message, bool isUser, string placeholder)
+    public AiderChatMessage(string message, bool isUser, string placeholder, int tokens, float cost)
     {
         AddToClassList("message-container");
         AddToClassList(isUser ? "is-user" : "is-ai");
+        this.placeholder = placeholder;
         this.Message = message;
         this.isUser = isUser;
-        this.placeholder = placeholder;
+        this.Tokens = tokens;
+        this.Cost = cost;
 
         Reparse();
     }
@@ -62,7 +134,8 @@ public class AiderChatMessage : VisualElement
     public void Reparse()
     {
         this.Clear();
-        MarkdownParser.Parse(this, this.Message);
+        commands = UnityJsonCommandParser.ParseCommands(this.Message);
+        MarkdownParser.Parse(this, this._message, commands); // use _message to get the placeholder as well / the raw content
 
         if (!isUser)
         {
@@ -70,23 +143,5 @@ public class AiderChatMessage : VisualElement
             this.copyButton.AddToClassList("copy-button");
             this.Add(copyButton);
         }
-    }
-
-    public void SetText(string message, string placeholder = "")
-    {
-        if (string.IsNullOrWhiteSpace(message))
-        {
-            label.value = MarkdownParser.ParseString(placeholder);
-            return;
-        }
-
-        this.Message = message;
-        Reparse();
-    }
-
-    public void AppendText(string message)
-    {
-        this.Message += message;
-        Reparse();
     }
 }

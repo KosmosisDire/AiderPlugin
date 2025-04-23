@@ -3,7 +3,23 @@ import random
 import socket
 import time
 import aider_main
-from interface import AiderCommand, AiderRequest, AiderResponse
+from interface import AiderCommand, AiderRequest, AiderRequestHeader, AiderResponse
+
+
+# taken from https://stackoverflow.com/questions/17667903/python-socket-receive-large-amount-of-data
+def recvall(sock, n):
+    # Helper function to recv n bytes or return None if EOF is hit
+    data = bytearray()
+    
+    if (n <= 0):
+        return data
+
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet:
+            return None
+        data.extend(packet)
+    return data
 
 class Server:
     def __init__(self):
@@ -15,7 +31,7 @@ class Server:
 
     def start(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((self.host, self.port))
         actual_port = self.server_socket.getsockname()[1]
         self.server_socket.listen()
@@ -25,7 +41,8 @@ class Server:
         print(f"Connected on {self.addr}")
 
     def send(self, message: AiderResponse):
-        self.conn.sendall(message.serialize())
+        msg = message.serialize()
+        self.conn.sendall(msg)
 
     def send_string(self, string: str):
         self.send(AiderResponse(string, True))
@@ -37,16 +54,35 @@ class Server:
         words = string.split(" ")
         for i, word in enumerate(words):
             if i < len(words) - 1:
+                print(word + " ", end="", flush=True)
                 self.send(AiderResponse(word + " "))
                 time.sleep(random.uniform(0.01, 0.2))
             else:
                 self.send(AiderResponse(word, True))
 
     def receive(self):
-        data = self.conn.recv(1024)
-        if not data:
+        print("Waiting for data...")
+        header_data = self.conn.recv(AiderRequestHeader.HEADER_SIZE)
+        if not header_data or len(header_data) < AiderRequestHeader.HEADER_SIZE:
+            print("No header data received")
             return None
-        return AiderRequest.deserialize(data)
+    
+        print("Header data received:", header_data)
+        
+        header = AiderRequestHeader.deserialize(header_data)
+        if header is None or header.content_length <= 0:
+            print("Invalid content length")
+            return None
+        
+        print("header:", header.header_marker, header.content_length)
+
+        data = recvall(self.conn, header.content_length)
+        if not data:
+            print("No data received")
+            return None
+        
+        print("Data received:", data)
+        return AiderRequest.deserialize(data, header)
 
     def close(self):
         self.conn.close()
@@ -66,6 +102,7 @@ def main():
 
             while True: # continue to listen for new messages
                 request = server.receive()
+                print(f"Received request: {request}")
 
                 if request is None:
                     break
@@ -91,7 +128,7 @@ def main():
                         else:
 
                             # check if there is only one file in all files that ends with filename
-                            # because the user may have just but the name of the file not the path
+                            # because the user may have just put the name of the file not the path
                             filename = name.replace("\\", "/").split("/")[-1]
                             matches = [fname for fname in coder.get_all_relative_files() if fname.endswith(f"{filename}")]
                             if len(matches) == 1:
@@ -118,18 +155,25 @@ def main():
                                 server.send_error(f"Cannot drop {name} because it is not in chat.")
 
                         continue
+                    case AiderCommand.MAP:
+                        print("Sending repo map")
+                        server.send_string(coder.get_repo_map())
                     case AiderCommand.RESET:
                         coder.abs_fnames = set()
                         coder.abs_read_only_fnames = set()
                         coder.done_messages = []
                         coder.cur_messages = []
                         server.send_string("Reset chat successfully.")
-                        continue
+                        continue 
 
+                full_output = ""
                 for output in aider_main.send_message_get_output(request.content):
-                    server.send(AiderResponse(output))
+                    full_output += output
+                    server.send(AiderResponse(output, False, True))
 
-                server.send(AiderResponse("", True, usage_report=coder.usage_report))
+                print(f"Tokens sent: {aider_main.tokens_sent}, Tokens received: {aider_main.tokens_received}, Message cost: {aider_main.message_cost}, Session cost: {aider_main.total_cost}")
+                
+                server.send(AiderResponse(full_output, True, False, False, aider_main.tokens_sent, aider_main.tokens_received, aider_main.message_cost, aider_main.total_cost))
 
 if __name__ == "__main__":
     main()

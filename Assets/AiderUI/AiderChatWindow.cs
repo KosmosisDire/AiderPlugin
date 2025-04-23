@@ -5,6 +5,9 @@ using UnityEngine.UIElements;
 using System.IO; 
 using Debug = UnityEngine.Debug;
 using System;
+using UnityEngine.SceneManagement;
+using System.Threading.Tasks;
+
 
 public class AiderChatWindow : EditorWindow
 {
@@ -17,16 +20,12 @@ public class AiderChatWindow : EditorWindow
     public Button settingsButton;
     public Button historyButton;
     public Button newChatButton;
+    public TextField textField;
     public Button sendButton;
     public Label sessionCostLabel;
-    private bool isStreaming = false;
+
 
     public bool HistoryOpen => chatHistory != null && chatHistory.resolvedStyle.display == DisplayStyle.Flex;
-
-    private void OnEnable()
-    {
-        AiderRunner.EnsureAiderBridgeRunning();
-    }
 
     [MenuItem("Aider/Chat Window")]
     public static void ShowWindow()
@@ -35,14 +34,53 @@ public class AiderChatWindow : EditorWindow
     }
 
 
-    private void CreateGUI()
+    private async void CreateGUI()
     {
+        chatList = null;
+
+        var currentChat = EditorPrefs.GetString("Aider-CurrentChat", "");
+        if (currentChat != "")
+        {
+            Debug.Log($"Loading chat {currentChat}");
+            chatList = new AiderChatList(currentChat, AiderChatHistory.ChatSavePath);
+            
+            if (EditorPrefs.GetBool("Aider-ExecuteOnLoad", false))
+            {
+                var commands = UnityJsonCommandParser.ParseCommands(chatList.chatList.Last().Message);
+
+                // wait for the editor to be idle
+                while (EditorApplication.isCompiling || EditorApplication.isUpdating)
+                {
+                    await Task.Delay(100);
+                }
+                await Task.Delay(1000);
+
+                foreach (var command in commands)
+                {
+                    await command.Execute();
+                }
+
+                UpdateSendEnabled();
+
+                EditorPrefs.SetBool("Aider-ExecuteOnLoad", false);
+            }
+        }
+
+        await Client.ConnectToBridge();
+
         VisualElement root = rootVisualElement;
         root.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Editor/AiderWindow.uss"));
         root.AddToClassList(EditorGUIUtility.isProSkin ? "dark-mode" : "light-mode");
         root.AddToClassList("aider-chat-window");
-
-        NewChat();
+        if (chatList != null)
+        {
+            root.Add(chatList);
+        }
+        
+        if (currentChat == "")
+        {
+            await NewChat();
+        }
 
         // history 
         chatHistory = new AiderChatHistory(this);
@@ -61,48 +99,38 @@ public class AiderChatWindow : EditorWindow
         footer.Add(inputWrapper);
 
         // make chat input
-        TextField textField = new()
+        textField = new()
         {
             multiline = true,
         };
 
-        textField.RegisterCallback<KeyDownEvent>(evt =>
+        textField.RegisterCallback<KeyDownEvent>(async evt =>
         {
-            if (evt.keyCode == KeyCode.Return && !evt.shiftKey && !string.IsNullOrWhiteSpace(textField.value) && !isStreaming)
+            if (evt.keyCode == KeyCode.Return && !evt.shiftKey && !string.IsNullOrWhiteSpace(textField.value) && !Client.IsStreaming)
             {
-                SendChatMessage(textField);
+                await SendCurrentMessage();
             }
         });
 
         textField.RegisterValueChangedCallback(evt =>
         {
-            if (string.IsNullOrWhiteSpace(evt.newValue))
-            {
-                sendButton.SetEnabled(false);
-            }
-            else if (!isStreaming)
-            {
-                sendButton.SetEnabled(true);
-            }
-        });
+            UpdateSendEnabled();
+        }); 
 
-        textField.name = "chat-input";
         textField.AddToClassList("chat-input");
         textField.SetPlaceholderText("How can I help you?");
         inputWrapper.Add(textField);
 
-        sendButton = new Button(() =>
+        sendButton = new Button(async () =>
         {
-            SendChatMessage(textField);
+            await SendCurrentMessage();
         });
-        sendButton.SetEnabled(false);
         sendButton.style.scale = new StyleScale(StyleKeyword.Null);
         sendButton.AddToClassList("send-button");
         inputWrapper.Add(sendButton);
 
         // make context list
         contextList = new AiderContextList();
-        contextList.Update(Client.GetContextList());
         footer.Add(contextList);
 
         configWindow = new AiderConfigWindow();
@@ -134,10 +162,10 @@ public class AiderChatWindow : EditorWindow
         settingsButton.tooltip = "Settings";
         settingsButton.AddToClassList("settings-button");
         header.Add(settingsButton);
+
         // add usage report label
         sessionCostLabel = new Label();
         sessionCostLabel.AddToClassList("session-cost-label");
-        //sessionCostLabel.tooltip = "Total session cost";
         header.Add(sessionCostLabel);
 
         // add floating history button at top left corner of window
@@ -159,18 +187,59 @@ public class AiderChatWindow : EditorWindow
         header.Add(historyButton);
 
         root.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
-        root.RegisterCallback<DragPerformEvent>(OnDragPerform);
-
+        root.RegisterCallback<DragPerformEvent>(async (evt) => await OnDragPerform(evt));
+        
         // Add floating add chat button at the top right corner
-        newChatButton = new Button(NewChat);
+        newChatButton = new Button(async () => await NewChat());
         newChatButton.tooltip = "New Chat";
         newChatButton.AddToClassList("new-chat-button");
         header.Add(newChatButton);
 
+        contextList.Update(await Client.GetContextList()); // this goes before the chat is replaced, so the scroll to bottom isn't messed up
+
+        ReplaceChat(chatList);
         ShowChat();
     }
 
-    public void ReplaceChat(AiderChatList chat)
+    private async Task UpdateScene()
+    {
+        string sceneInfo = SceneInfoGenerator.GetSceneInfoJson();
+        bool success = await Client.AddFileFromMemory($"_{SceneManager.GetActiveScene().name}", sceneInfo);
+        
+        if (success) Debug.Log("Scene info updated");
+        else Debug.LogError("Failed to update scene info");
+
+        string gameObjectMenu = string.Join("\n", MenuItemsUtility.GetMenuItems("GameObject"));
+        success = await Client.AddFileFromMemory("_GameObjectMenu", gameObjectMenu);
+
+        if (success) Debug.Log("GameObject menu updated");
+        else Debug.LogError("Failed to update GameObject menu");
+    }
+
+    private void UpdateSendEnabled()
+    {
+        if (string.IsNullOrWhiteSpace(textField.value) || Client.IsStreaming)
+        {
+            sendButton.SetEnabled(false);
+        }
+        else
+        {
+            sendButton.SetEnabled(true);
+        }
+    }
+
+    public async Task SendCurrentMessage()
+    {
+        await UpdateScene();
+        var req = new AiderRequest(textField.value);
+        textField.value = "";
+        await Client.Send(req);
+        chatList.AddMessage(req.Content, true, "<i><color=#888888>No message content</color></i>");
+        chatList.AddMessage("", false, "<i><color=#888888>Thinking...</color></i>");
+        _ = Client.ReceiveAllResponesAsync(HandleResponse);
+    }
+
+    public async Task ReplaceChat(AiderChatList chat)
     {
         VisualElement root = rootVisualElement;
         int index = root.IndexOf(chatList);
@@ -186,6 +255,8 @@ public class AiderChatWindow : EditorWindow
 
         chatList = chat;
         root.Insert(index, chatList);
+        await Task.Delay(100);
+        chatList.ScrollToBottom();
     }
 
     public void ShowChat(bool withFooter = true)
@@ -217,13 +288,14 @@ public class AiderChatWindow : EditorWindow
         configWindow.Hide();
     }
 
-    public void NewChat()
+    public async Task NewChat()
     {
         VisualElement root = rootVisualElement;
 
         // Clears Aider's context
-        Client.Reset();
-        contextList?.Update(Client.GetContextList());
+        await Client.Reset();
+        await UpdateScene();
+        contextList?.Update(await Client.GetContextList());
 
         int index = 0;
         if (chatList != null)
@@ -246,68 +318,77 @@ public class AiderChatWindow : EditorWindow
 
         ShowChat();
     }
-    private void SendChatMessage(TextField textField)
-    {
-        isStreaming = true;
-        sendButton.SetEnabled(false);
-        Debug.Log($"Sending: {textField.value}");
-
-        var req = new AiderRequest(textField.value);
-        textField.value = "";
-
-        Client.Send(req);
-        chatList.AddMessage(req.Content, true, "Empty Message");
-        chatList.AddMessage("", false, "Thinking...");
-        Client.AsyncReceive(HandleResponse);
-
-    }
 
     private void OnDragUpdated(DragUpdatedEvent evt)
     {
         DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
     }
 
-    private void OnDragPerform(DragPerformEvent evt)
+    private async Task OnDragPerform(DragPerformEvent evt)
     {
         DragAndDrop.AcceptDrag();
-
         foreach (var path in DragAndDrop.paths)
         {
             if (File.Exists(path))
             {
-                Client.AddFile(path);
-                var context = Client.GetContextList();
-                contextList.Update(context);
+                await Client.AddFile(path);
                 Debug.Log($"Added {path} to the context");
             }
         }
+
+        foreach (var obj in DragAndDrop.objectReferences)
+        {
+            if (obj is GameObject gameObject)
+            {
+                string objInfo = SceneInfoGenerator.GetDetailedObjectInfo(gameObject);
+                string fileName = $"{gameObject.name}";
+                bool success = await Client.AddFileFromMemory(fileName, objInfo);
+                if (success)
+                {
+                    Debug.Log($"Added {fileName} to the context");
+                }
+                else
+                {
+                    Debug.LogError($"Failed to add {fileName} to the context");
+                }
+            }
+        }
+
+        var context = await Client.GetContextList();
+        contextList.Update(context);
     }
 
-    private void HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
+    private async void HandleResponseEnd(AiderResponse response, AiderChatMessage messageEl)
     {
-        Debug.Log("Response end");
-        isStreaming = false;
-        var textField = rootVisualElement.Q<TextField>("chat-input");
-        sendButton.SetEnabled(!string.IsNullOrWhiteSpace(textField?.value));
-        // reload assets in case a file was changed
-        AssetDatabase.Refresh();
+        
+        var userMsg = chatList[^2];
+        userMsg.Tokens = response.Header.TokensSent;
+        messageEl.Tokens = response.Header.TokensReceived;
+        messageEl.Cost = response.Header.MessageCost;
+        sessionCostLabel.text = $"Session cost: {response.Header.SessionCost}";
 
         // save chat to a file
         chatList.SerializeChat();
+        EditorPrefs.SetString("Aider-CurrentChat", chatList.chatID);
 
-        var context = Client.GetContextList();
-        Debug.Log(context);
+        await Task.Delay(1000);
+
+        var context = await Client.GetContextList();
         contextList.Update(context);
 
-        if (!string.IsNullOrEmpty(response.UsageReport))
+        if (response.HasFileChanges)
         {
+            EditorPrefs.SetBool("Aider-ExecuteOnLoad", true);
+            AssetDatabase.Refresh();
+        }
+        else
+        {
+            foreach (var command in messageEl.commands)
+            {
+                await command.Execute();
+            }
 
-            var userMsg = chatList[chatList.Count - 2];
-            // Updates the chat message label for cost/tokens
-            messageEl.SetMessageLabel(response.TokenCountReceived, response.CostMessage);
-            userMsg.SetMessageLabel(response.TokenCountSent);
-            // Updates the total session cost label
-            sessionCostLabel.text = $"Session cost: {response.CostSession}";
+            UpdateSendEnabled();
         }
     }
 
@@ -316,10 +397,19 @@ public class AiderChatWindow : EditorWindow
         var current = chatList.Last();
         if (!current.isUser)
         {
-            current.AppendText(response.Content);
+            if (response.Header.IsError)
+            {
+                current.Message = response.Content;
+                current.AddToClassList("error-message");
+                return;
+            }
+
+            if (response.Header.IsDiff) current.Message += response.Content;
+            else current.Message = response.Content;
+
             chatList.ScrollToBottom();
 
-            if (response.Last)
+            if (response.Header.IsLast)
             {
                 HandleResponseEnd(response, current);
             }
