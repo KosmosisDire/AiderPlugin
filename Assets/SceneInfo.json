@@ -3,8 +3,8 @@
     "unityVersion": "6000.0.37f1",
     "objects": [
         {
-            "scenePath": "Enemy",
-            "tag": "Enemy",
+            "scenePath": "EnemyShip",
+            "tag": "Untagged",
             "layer": "Default",
             "isActive": true,
             "components": [
@@ -12,16 +12,7 @@
                 "SpriteRenderer",
                 "EnemyController",
                 "Rigidbody2D",
-                "PolygonCollider2D"
-            ]
-        },
-        {
-            "scenePath": "Enemy/FirePoint",
-            "tag": "Untagged",
-            "layer": "Default",
-            "isActive": true,
-            "components": [
-                "Transform"
+                "BoxCollider2D"
             ]
         },
         {
@@ -49,15 +40,14 @@
         },
         {
             "scenePath": "PlayerShip",
-            "tag": "Player",
+            "tag": "Untagged",
             "layer": "Default",
             "isActive": true,
             "components": [
                 "Transform",
                 "SpriteRenderer",
                 "SpaceshipController",
-                "Rigidbody2D",
-                "PolygonCollider2D"
+                "Rigidbody2D"
             ]
         },
         {

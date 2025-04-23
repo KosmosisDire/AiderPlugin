@@ -11,12 +11,16 @@ public class SpaceshipController : MonoBehaviour
     public float rotateSpeed = 100.0f;
 
     [Header("Shooting")]
-    public GameObject bulletPrefab; // Assign the Bullet prefab in the Inspector
+    public GameObject bulletPrefab; // Assign the Player Bullet prefab in the Inspector
     public Transform firePoint; // Assign an empty GameObject child as the fire point
+    public string bulletTag = "Bullet"; // Tag for player bullets
+
+    [Header("Stats")]
+    public int health = 100; // Player's health
 
     private InputAction moveAction;
     private InputAction rotateAction;
-    private InputAction fireAction;
+    private InputAction fireAction; // Renamed for clarity, will handle both triggers
 
     private Rigidbody2D rb; // Add reference for Rigidbody2D
 
@@ -41,9 +45,14 @@ public class SpaceshipController : MonoBehaviour
         rotateAction.performed += ctx => rotateInput = ctx.ReadValue<Vector2>();
         rotateAction.canceled += ctx => rotateInput = Vector2.zero;
 
-        // --- Fire Action ---
-        fireAction = new InputAction("PlayerFire", binding: "<Gamepad>/buttonSouth"); // A button on Xbox
-        fireAction.performed += OnFire; // Register callback
+        // --- Fire Action (Triggers) ---
+        // Initialize the action without a specific binding initially
+        fireAction = new InputAction("PlayerFire");
+        // Add bindings for both left and right triggers
+        fireAction.AddBinding("<Gamepad>/leftTrigger");
+        fireAction.AddBinding("<Gamepad>/rightTrigger");
+        // Register the callback for when the action is performed (either trigger pressed)
+        fireAction.performed += OnFire;
 
         // Get the Rigidbody2D component attached to this GameObject
         rb = GetComponent<Rigidbody2D>();
@@ -58,7 +67,7 @@ public class SpaceshipController : MonoBehaviour
         {
              rb.gravityScale = 0f;
              rb.linearDamping = 0.5f; // Linear drag (resistance to movement)
-             rb.angularDamping = 0.8f; // Angular drag (resistance to rotation) - often higher than linear
+            // rb.angularDamping = 0.8f; // Angular drag removed as we now set rotation directly
         }
     }
 
@@ -80,6 +89,7 @@ public class SpaceshipController : MonoBehaviour
         moveAction.canceled -= ctx => moveInput = Vector2.zero;
         rotateAction.performed -= ctx => rotateInput = ctx.ReadValue<Vector2>();
         rotateAction.canceled -= ctx => rotateInput = Vector2.zero;
+        // Ensure the callback is unregistered from the fire action
         fireAction.performed -= OnFire;
     }
 
@@ -95,16 +105,24 @@ public class SpaceshipController : MonoBehaviour
         if (rb == null) return; // Don't try to use rb if it wasn't found
 
         // --- Apply Movement Force ---
-        // Use the vertical axis of the left stick (moveInput.y) to apply force forward/backward
-        // Use transform.up because in 2D, the "forward" direction is often the green Y axis
-        Vector2 moveForce = (Vector2)transform.up * moveInput.y * moveSpeed;
+        // Use the full left stick input vector for world-space movement (strafing)
+        Vector2 moveForce = moveInput * moveSpeed;
         rb.AddForce(moveForce);
 
-        // --- Apply Rotational Torque ---
-        // Use the horizontal axis of the right stick (rotateInput.x) to apply torque for rotation
-        // Negative sign often makes right stick right = clockwise rotation
-        float torque = -rotateInput.x * rotateSpeed;
-        rb.AddTorque(torque);
+        // --- Set Rotation based on Right Stick ---
+        // Check if the right stick is being moved significantly
+        if (rotateInput.sqrMagnitude > 0.01f) // Use square magnitude for efficiency
+        {
+            // Calculate the angle the stick is pointing in world space
+            // Atan2 gives angle in radians relative to positive X axis
+            // Convert to degrees and subtract 90 because Unity's 0 rotation is 'up' (0,1)
+            float targetAngle = Mathf.Atan2(rotateInput.y, rotateInput.x) * Mathf.Rad2Deg - 90f;
+
+            // Smoothly rotate towards the target angle
+            float newAngle = Mathf.MoveTowardsAngle(rb.rotation, targetAngle, rotateSpeed * Time.fixedDeltaTime);
+            rb.MoveRotation(newAngle); // Use MoveRotation for physics-based rotation
+        }
+        // If the stick is near center, the ship maintains its last rotation.
     }
 
 
@@ -113,17 +131,40 @@ public class SpaceshipController : MonoBehaviour
         // This method is called when the fire action is performed (button pressed)
         Debug.Log("Fire button pressed!");
 
-        if (bulletPrefab != null)
+        if (bulletPrefab != null && firePoint != null)
         {
-            // Use firePoint if assigned, otherwise use the ship's position/rotation
-            Transform spawnTransform = (firePoint != null) ? firePoint : transform;
-            // Calculate the desired rotation: spawn point's rotation plus 90 degrees on Z
-            Quaternion spawnRotation = spawnTransform.rotation * Quaternion.Euler(0, 0, 90);
-            Instantiate(bulletPrefab, spawnTransform.position, spawnRotation);
+            // Calculate the desired rotation: fire point's rotation plus 90 degrees on Z
+            Quaternion spawnRotation = firePoint.rotation * Quaternion.Euler(0, 0, 90);
+
+            // Instantiate the player bullet with the adjusted rotation
+            GameObject bullet = Instantiate(bulletPrefab, firePoint.position, spawnRotation);
+            // Ensure the player's bullet has the correct tag
+            bullet.tag = bulletTag; // Tag the instantiated bullet
         }
         else
         {
-            Debug.LogWarning("Bullet Prefab not assigned in SpaceshipController.");
+            if(bulletPrefab == null) Debug.LogWarning("Bullet Prefab not assigned in SpaceshipController.");
+            if(firePoint == null) Debug.LogWarning("Fire Point not assigned in SpaceshipController.");
         }
+    }
+
+    // Method called by enemy bullets when hitting the player
+    public void TakeDamage(int damage)
+    {
+        health -= damage;
+        Debug.Log($"Player hit! Current health: {health}");
+
+        if (health <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        Debug.Log("Player has been destroyed!");
+        // Add any game over logic, effects, etc. here
+        // For now, just destroy the player GameObject
+        Destroy(gameObject);
     }
 }

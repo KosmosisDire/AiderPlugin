@@ -1,0 +1,92 @@
+{
+    "scenePath": "Enemy",
+    "tag": "Enemy",
+    "layer": "Default",
+    "isActive": true,
+    "components": [
+        {
+            "type": "Transform",
+            "properties": [
+                "Quaternion localRotation = (0.00000, 0.00000, 0.00000, 1.00000)",
+                "Vector3 localPosition = (0.00, 1.71, 0.00)",
+                "Vector3 localScale = (1.00, 1.00, 1.00)",
+                "PRIVATE bool constrainProportionsScale = false // Use commands to modify private properties or make them public if you wrote this component"
+            ]
+        },
+        {
+            "type": "SpriteRenderer",
+            "properties": [
+                "bool receiveShadows = false",
+                "bool staticShadowCaster = false",
+                "LightProbeUsage lightProbeUsage = cannot display as text",
+                "ReflectionProbeUsage reflectionProbeUsage = cannot display as text",
+                "RayTracingMode rayTracingMode = cannot display as text",
+                "PRIVATE bool smallMeshCulling = true // Use commands to modify private properties or make them public if you wrote this component",
+                "uint renderingLayerMask = 1",
+                "int rendererPriority = 0",
+                "Material[] materials = [unknown]",
+                "Transform probeAnchor = null",
+                "Sprite sprite = Assets/Demo/Ship_2.png",
+                "Color color = RGBA(1.000, 1.000, 1.000, 1.000)",
+                "bool flipX = false",
+                "bool flipY = false",
+                "SpriteDrawMode drawMode = cannot display as text",
+                "Vector2 size = (0.64, 0.56)",
+                "float adaptiveModeThreshold = 0.5",
+                "SpriteMaskInteraction maskInteraction = cannot display as text",
+                "SpriteSortPoint spriteSortPoint = cannot display as text"
+            ]
+        },
+        {
+            "type": "EnemyController",
+            "properties": [
+                "int health = 100",
+                "int damageFromPlayerBullet = 10",
+                "string playerBulletTag = [66117108108101116]",
+                "float moveSpeed = 3",
+                "float stoppingDistance = 5",
+                "GameObject bulletPrefab = Assets/Demo/EnemyBullet.prefab",
+                "Transform firePoint = unknown",
+                "float fireRate = 2",
+                "string playerTag = [8010897121101114]"
+            ]
+        },
+        {
+            "type": "Rigidbody2D",
+            "properties": [
+                "RigidbodyType2D bodyType = cannot display as text",
+                "bool simulated = true",
+                "bool useFullKinematicContacts = false",
+                "bool useAutoMass = false",
+                "float mass = 1",
+                "float linearDamping = 0",
+                "float angularDamping = 0.05",
+                "float gravityScale = 0",
+                "LayerMask includeLayers = cannot display as text",
+                "LayerMask excludeLayers = cannot display as text",
+                "RigidbodyConstraints2D constraints = cannot display as text"
+            ]
+        },
+        {
+            "type": "PolygonCollider2D",
+            "properties": [
+                "float density = 1",
+                "LayerMask includeLayers = cannot display as text",
+                "LayerMask excludeLayers = cannot display as text",
+                "int layerOverridePriority = 0",
+                "LayerMask forceSendLayers = cannot display as text",
+                "LayerMask forceReceiveLayers = cannot display as text",
+                "LayerMask contactCaptureLayers = cannot display as text",
+                "LayerMask callbackLayers = cannot display as text",
+                "bool isTrigger = false",
+                "bool usedByEffector = false",
+                "CompositeOperation compositeOperation = cannot display as text",
+                "int compositeOrder = 0",
+                "Vector2 offset = (0.00, 0.00)",
+                "bool autoTiling = false",
+                "Vector2[] points = cannot display as text",
+                "bool useDelaunayMesh = false"
+            ]
+        }
+    ]
+}
