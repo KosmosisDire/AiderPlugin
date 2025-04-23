@@ -6,6 +6,9 @@ using UnityEngine.InputSystem;
 
 public class SpaceshipController : MonoBehaviour
 {
+    private UIManager uiManager; // Reference to the UI Manager
+    private int maxHealth; // Store initial health for UI calculation
+
     [Header("Movement")]
     public float moveSpeed = 5.0f;
     public float rotateSpeed = 100.0f;
@@ -13,6 +16,7 @@ public class SpaceshipController : MonoBehaviour
     [Header("Shooting")]
     public GameObject bulletPrefab; // Assign the Player Bullet prefab in the Inspector
     public Transform firePoint; // Assign an empty GameObject child as the fire point
+    public float fireRate = 5f; // Bullets per second for auto-fire
     public string bulletTag = "Bullet"; // Tag for player bullets
 
     [Header("Stats")]
@@ -26,9 +30,20 @@ public class SpaceshipController : MonoBehaviour
 
     private Vector2 moveInput;
     private Vector2 rotateInput; // Using Vector2 for stick input, often only X is used for rotation Z
+    private float nextFireTime = 0f; // Time when the next shot can be fired
 
     void Awake()
     {
+        // Get the UI Manager instance
+        uiManager = UIManager.Instance;
+        if (uiManager == null)
+        {
+            Debug.LogWarning("UIManager instance not found!");
+        }
+
+        // Store the initial health as max health
+        maxHealth = health;
+
         // --- Movement Action ---
         moveAction = new InputAction("PlayerMove", binding: "<Gamepad>/leftStick");
         moveAction.AddCompositeBinding("Dpad") // Optional: Add D-pad support
@@ -51,8 +66,7 @@ public class SpaceshipController : MonoBehaviour
         // Add bindings for both left and right triggers
         fireAction.AddBinding("<Gamepad>/leftTrigger");
         fireAction.AddBinding("<Gamepad>/rightTrigger");
-        // Register the callback for when the action is performed (either trigger pressed)
-        fireAction.performed += OnFire;
+        // We will check the button state in Update for auto-fire, so no callback needed here.
 
         // Get the Rigidbody2D component attached to this GameObject
         rb = GetComponent<Rigidbody2D>();
@@ -89,14 +103,31 @@ public class SpaceshipController : MonoBehaviour
         moveAction.canceled -= ctx => moveInput = Vector2.zero;
         rotateAction.performed -= ctx => rotateInput = ctx.ReadValue<Vector2>();
         rotateAction.canceled -= ctx => rotateInput = Vector2.zero;
-        // Ensure the callback is unregistered from the fire action
-        fireAction.performed -= OnFire;
+        // No callback was registered, so nothing to unregister for fireAction
+    }
+
+    // Called once after Awake
+    void Start()
+    {
+        // Initialize the health bar display
+        if (uiManager != null)
+        {
+            uiManager.UpdateHealthBar(health, maxHealth);
+        }
     }
 
     // Update is fine for reading input, but physics should be in FixedUpdate
     void Update()
     {
-        // Input reading remains here as it's tied to frame rate
+        // --- Handle Auto-Fire ---
+        // Check if the fire button is currently held down and if enough time has passed since the last shot
+        if (fireAction.IsPressed() && Time.time >= nextFireTime)
+        {
+            // Update the time when the next shot can be fired
+            nextFireTime = Time.time + 1f / fireRate;
+            // Call the method to fire the bullet
+            FireBullet();
+        }
     }
 
     // Apply physics forces in FixedUpdate for consistent physics simulation
@@ -125,11 +156,10 @@ public class SpaceshipController : MonoBehaviour
         // If the stick is near center, the ship maintains its last rotation.
     }
 
-
-    private void OnFire(InputAction.CallbackContext context)
+    // Renamed from OnFire and removed context parameter as it's called directly now
+    private void FireBullet()
     {
-        // This method is called when the fire action is performed (button pressed)
-        Debug.Log("Fire button pressed!");
+        // Debug.Log("Firing bullet!"); // Optional: Keep for debugging auto-fire
 
         if (bulletPrefab != null && firePoint != null)
         {
@@ -152,7 +182,15 @@ public class SpaceshipController : MonoBehaviour
     public void TakeDamage(int damage)
     {
         health -= damage;
+        // Ensure health doesn't go below zero visually
+        if (health < 0) health = 0;
         Debug.Log($"Player hit! Current health: {health}");
+
+        // Update the health bar via UIManager
+        if (uiManager != null)
+        {
+            uiManager.UpdateHealthBar(health, maxHealth);
+        }
 
         if (health <= 0)
         {
@@ -163,8 +201,18 @@ public class SpaceshipController : MonoBehaviour
     private void Die()
     {
         Debug.Log("Player has been destroyed!");
-        // Add any game over logic, effects, etc. here
-        // For now, just destroy the player GameObject
-        Destroy(gameObject);
+        // Call the UIManager to show the Game Over screen
+        if (uiManager != null)
+        {
+            uiManager.ShowGameOver();
+        }
+        else
+        {
+             Debug.LogWarning("UIManager instance not found! Cannot show Game Over screen.");
+        }
+        // Deactivate the player object instead of destroying it immediately,
+        // so other scripts can potentially reference it if needed before scene reload.
+        gameObject.SetActive(false);
+        // Destroy(gameObject); // Optionally destroy if no other references are needed
     }
 }

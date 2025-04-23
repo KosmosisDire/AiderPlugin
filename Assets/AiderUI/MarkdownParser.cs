@@ -50,15 +50,6 @@ public class TableElement : VisualElement
     }
 }
 
-public class SelectableLabel : TextField
-{
-    public SelectableLabel(string content)
-    {
-        this.isReadOnly = true;
-        this.Q<TextElement>(null, "unity-text-element").enableRichText = true;
-        this.value = content;
-    }
-}
 
 public class CodeElement : SelectableLabel
 {

@@ -2,10 +2,13 @@ using UnityEngine;
 
 public class EnemyController : MonoBehaviour
 {
+    private UIManager uiManager; // Reference to the UI Manager
+
     [Header("Stats")]
     public int health = 100; // Default health
     public int damageFromPlayerBullet = 10; // Damage taken from a player bullet
     public string playerBulletTag = "Bullet"; // Tag to identify player bullets
+    public int scoreValue = 10; // Score awarded when this enemy is destroyed
 
     [Header("Movement")]
     public float moveSpeed = 3f; // Speed at which the enemy moves
@@ -55,6 +58,13 @@ public class EnemyController : MonoBehaviour
         {
             // Ensure gravity doesn't affect the enemy
             rb.gravityScale = 0f;
+        }
+
+        // Find the UIManager instance using the Singleton pattern
+        uiManager = UIManager.Instance;
+        if (uiManager == null)
+        {
+            Debug.LogError("UIManager instance not found!", this);
         }
     }
 
@@ -168,8 +178,19 @@ public class EnemyController : MonoBehaviour
     void Die()
     {
         Debug.Log("Enemy died.");
+
+        // Add score via UIManager before destroying the GameObject
+        if (uiManager != null)
+        {
+            uiManager.AddScore(scoreValue);
+        }
+        else
+        {
+             Debug.LogWarning("UIManager not found, cannot add score.", this);
+        }
+
         // Destroy the enemy GameObject
         Destroy(gameObject);
-        // Optional: Add explosion effects, score updates, etc. here
+        // Optional: Add explosion effects here
     }
 }

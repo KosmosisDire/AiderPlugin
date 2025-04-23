@@ -43,6 +43,10 @@ public static class CSharpCompiler
                 CompilationPipeline.GetPrecompiledAssemblyPaths(
                     CompilationPipeline.PrecompiledAssemblySources.UserAssembly
                 )
+            ).Concat(
+                CompilationPipeline.GetPrecompiledAssemblyPaths(
+                    CompilationPipeline.PrecompiledAssemblySources.UnityEditor
+                )
             ).ToArray();
             
             assemblyBuilder.additionalReferences = references;

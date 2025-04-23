@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -48,16 +50,17 @@ public struct CommandFeedback
 
 public abstract class AiderUnityCommandBase
 {
+    public string sourceJson;
     VisualElement container;
     ScrollView outputLog;
-    Label outputLabel;
+    SelectableLabel outputLabel;
 
     public bool isFinished = false;
     protected abstract Task<CommandFeedback> ExecuteCommand();
     public async Task Execute()
     {
-        // try
-        // {
+        try
+        {
             container.RemoveFromClassList("command-finished");
             container.AddToClassList("command-executing");
             isFinished = false;
@@ -82,11 +85,8 @@ public abstract class AiderUnityCommandBase
                 container.RemoveFromClassList("command-error");
             }
 
-
-            if (outputLabel == null)
-                outputLabel = new Label();
-
-            outputLabel.text = output.message?.Trim() ?? "";
+            outputLabel ??= new SelectableLabel();
+            outputLabel.value = output.message?.Trim() ?? "";
             outputLabel.AddToClassList("command-output-label");
             outputLog.Add(outputLabel);
 
@@ -102,11 +102,11 @@ public abstract class AiderUnityCommandBase
             isFinished = true;
             container.RemoveFromClassList("command-executing");
             container.AddToClassList("command-finished");
-        // }
-        // catch (Exception e)
-        // {
-        //     Debug.LogError($"Error executing command: {e.Message}");
-        // }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error executing command: {e.Message}");
+        }
     }
 
     public abstract VisualElement BuildDisplay();
@@ -144,6 +144,13 @@ public abstract class AiderUnityCommandBase
         executeButton.AddToClassList("command-execute-button");
         container.Add(executeButton);
 
+        var sourceButton = new Button(() =>
+        {
+            GUIUtility.systemCopyBuffer = sourceJson;
+        });
+        sourceButton.AddToClassList("command-source-button");
+        container.Add(sourceButton);
+
         return container;
     }
 }
@@ -170,7 +177,7 @@ public class InvalidCommand : AiderUnityCommandBase
     }
 }
 
-// Add Object Command
+// Add Component Command
 [Serializable]
 public class AddComponentCommand : AiderUnityCommandBase
 {
@@ -186,7 +193,7 @@ public class AddComponentCommand : AiderUnityCommandBase
     protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing AddComponentCommand: {objectPath} with component {componentType}");
-        GameObject targetObject = GameObject.Find(objectPath);
+        GameObject targetObject = FindObjectUtil.FindObjectWithScenePath(objectPath);
         if (targetObject != null)
         {
             Type type = UnityJsonCommandParser.FindType(componentType, false, true);
@@ -221,11 +228,11 @@ public class AddComponentCommand : AiderUnityCommandBase
 [Serializable]
 public class AddObjectCommand : AiderUnityCommandBase
 {
-    public string objectPath;
+    public string scenePath;
     public string objectType;
-    public float[] position;
-    public float[] rotation;
-    public float[] scale;
+    public Vector3 localPosition;
+    public Vector3 localRotation;
+    public Vector3 localScale;
     public string tag;
     public string layer;
 
@@ -238,49 +245,43 @@ public class AddObjectCommand : AiderUnityCommandBase
         string tag = null,
         string layer = null)
     {
-        this.objectPath = objectPath;
+        this.scenePath = objectPath;
         this.objectType = objectType;
-        this.position = new float[] { position.x, position.y, position.z };
-        this.rotation = new float[] { rotation.x, rotation.y, rotation.z };
-        this.scale = new float[] { scale.x, scale.y, scale.z };
+        this.localPosition = position;
+        this.localRotation = rotation;
+        this.localScale = scale;
         this.tag = tag;
         this.layer = layer;
     }
 
-    protected override async Task<CommandFeedback> ExecuteCommand()
+    public static void ProcessObject(CommandFeedback feedback, GameObject newObject, string scenePath, string objectType, Vector3 localPosition, Vector3 localRotation, Vector3 localScale, string tag = null, string layer = null)
     {
-        var commandFeedback = new CommandFeedback();
-
-        Debug.Log($"Executing AddObjectCommand: {objectPath}");
-        GameObject newObject = new GameObject("TEMP_OBJECT");
-
         // Set the object path in the hierarchy
-        if (objectPath.LastIndexOf('/') > 0)
+        if (scenePath.LastIndexOf('/') > 0)
         {
-            var parentPath = objectPath.Substring(0, objectPath.LastIndexOf('/'));
-            var parentObject = GameObject.Find(parentPath);
+            var parentPath = scenePath.Substring(0, scenePath.LastIndexOf('/'));
+            var parentObject = FindObjectUtil.FindObjectWithScenePath(parentPath);
             if (parentObject != null)
             {
                 newObject.transform.SetParent(parentObject.transform, true);
             }
             else
             {
-                commandFeedback.Log($"Parent object '{parentPath}' not found. Setting as root.", CommandStatus.Warning);
+                feedback.Log($"Parent object '{parentPath}' not found. Setting as root.", CommandStatus.Warning);
             }
         }
 
         // set local coordinates
-        newObject.transform.localPosition = new Vector3(position[0], position[1], position[2]);
-        newObject.transform.localRotation = Quaternion.Euler(rotation[0], rotation[1], rotation[2]);
-        newObject.transform.localScale = new Vector3(scale[0], scale[1], scale[2]);
+        newObject.transform.SetLocalPositionAndRotation(localPosition, Quaternion.Euler(localRotation));
+        newObject.transform.localScale = localScale;
 
-        newObject.name = objectPath.Substring(objectPath.LastIndexOf('/') + 1);
+        newObject.name = scenePath.Substring(scenePath.LastIndexOf('/') + 1);
         newObject.transform.SetAsLastSibling(); // Set the new object as the last sibling in the hierarchy
 
         // get type from type string
-        if (objectType != "GameObject")
+        Type type = UnityJsonCommandParser.FindType(objectType, false, true);
+        if (type != typeof(GameObject))
         {
-            Type type = UnityJsonCommandParser.FindType(objectType, false, true);
             Debug.Log($"Adding Type: {type}");
             if (type != null)
             {
@@ -288,16 +289,16 @@ public class AddObjectCommand : AiderUnityCommandBase
                 var component = newObject.AddComponent(type);
                 if (component == null)
                 {
-                    commandFeedback.Log($"Failed to add component of type '{objectType}' to '{objectPath}'.", CommandStatus.Error);
+                    feedback.Log($"Failed to add component of type '{objectType}' to '{scenePath}'.", CommandStatus.Error);
                 }
                 else
                 {
-                    commandFeedback.Log($"Added component of type '{objectType}' to '{objectPath}'.", CommandStatus.Success);
+                    feedback.Log($"Added component of type '{objectType}' to '{scenePath}'.", CommandStatus.Success);
                 }
             }
             else
             {
-                commandFeedback.Log($"Type '{objectType}' not found.", CommandStatus.Error);
+                feedback.Log($"Type '{objectType}' not found.", CommandStatus.Error);
             }
         }
 
@@ -316,8 +317,123 @@ public class AddObjectCommand : AiderUnityCommandBase
             }
             else
             {
-                commandFeedback.Log($"Layer '{layer}' not found.", CommandStatus.Warning);
+                feedback.Log($"Layer '{layer}' not found.", CommandStatus.Warning);
             }
+        }
+    }
+
+    protected override async Task<CommandFeedback> ExecuteCommand()
+    {
+        var commandFeedback = new CommandFeedback();
+
+        Debug.Log($"Executing AddObjectCommand: {scenePath}");
+        GameObject newObject = new("TEMP_OBJECT");
+
+        ProcessObject(commandFeedback, newObject, scenePath, objectType, localPosition, localRotation, localScale, tag, layer);
+
+        return commandFeedback;
+    }
+
+    public override VisualElement BuildDisplay()
+    {
+        var container = new VisualElement();
+        container.Add(new Label($"Adding {scenePath} with type {objectType}"));
+        return container;
+    }
+}
+
+
+// Add Object Command
+[Serializable]
+public class AddObjectMenuCommand : AiderUnityCommandBase
+{
+    public string menuPath;
+    public string scenePath;
+    public Vector3 localPosition;
+    public Vector3 localRotation;
+    public Vector3 localScale;
+    public string tag;
+    public string layer;
+
+    public AddObjectMenuCommand(
+        string menuPath, 
+        string scenePath, 
+        Vector3 position, 
+        Vector3 rotation, 
+        Vector3 scale,
+        string tag = null,
+        string layer = null)
+    {
+        this.menuPath = menuPath;
+        this.scenePath = scenePath;
+        this.localPosition = position;
+        this.localRotation = rotation;
+        this.localScale = scale;
+        this.tag = tag;
+        this.layer = layer;
+    }
+
+    protected override async Task<CommandFeedback> ExecuteCommand()
+    {
+        var commandFeedback = new CommandFeedback();
+
+        Debug.Log($"Executing AddObjectCommand: {scenePath}");
+
+        // get a list of all objects in scene before and after the command so we know what object was added
+        var allObjectsBefore = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+        
+        try
+        {
+            MenuItemsUtility.ExecuteMenuItem(menuPath);
+        }
+        catch (Exception e)
+        {
+            commandFeedback.Log($"Error executing menu item '{menuPath}': {e.Message}", CommandStatus.Error);
+            return commandFeedback;
+        }
+
+        var allObjectsAfter = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+
+        var listDiff = allObjectsAfter.Except(allObjectsBefore).ToList();
+
+        string GetTransformPath(GameObject go)
+        {
+            var t = go.transform;
+            if (t.parent == null) return t.name;
+            return GetTransformPath(t.parent.gameObject) + "/" + t.name;
+        }
+
+        // find minimum depth object
+        int minDepth = int.MaxValue;
+        foreach (var obj in listDiff)
+        {
+            var path = GetTransformPath(obj);
+            var depth = path.Split('/').Length;
+            if (depth < minDepth)
+            {
+                minDepth = depth;
+            }
+        }
+
+        // find all objects with this min depth. This represents all root added objects
+        listDiff = listDiff.Where(obj => GetTransformPath(obj).Split('/').Length == minDepth).ToList();
+
+        if (listDiff.Count == 0)
+        {
+            commandFeedback.Log($"No new objects created after executing menu item '{menuPath}'.", CommandStatus.Error);
+            return commandFeedback;
+        }
+
+        if (listDiff.Count > 1)
+        {
+            commandFeedback.Log($"Multiple new objects created after executing menu item '{menuPath}', applying to all.", CommandStatus.Warning);
+            return commandFeedback;
+        }
+
+        for (int i = 0; i < listDiff.Count; i++)
+        {
+            var newObject = listDiff[i];
+            AddObjectCommand.ProcessObject(commandFeedback, newObject, scenePath, newObject.GetType().Name, localPosition, localRotation, localScale, tag, layer);
         }
 
         return commandFeedback;
@@ -326,7 +442,7 @@ public class AddObjectCommand : AiderUnityCommandBase
     public override VisualElement BuildDisplay()
     {
         var container = new VisualElement();
-        container.Add(new Label($"Adding {objectPath} with type {objectType}"));
+        container.Add(new Label($"Adding {scenePath} from menu item {menuPath}"));
         return container;
     }
 }
@@ -375,9 +491,9 @@ public class SetComponentPropertyCommand : AiderUnityCommandBase
     public string objectPath;
     public string componentType;
     public string propertyPath;
-    public object value;
+    public string value;
 
-    public SetComponentPropertyCommand(string objectPath, string componentType, string propertyPath, object value)
+    public SetComponentPropertyCommand(string objectPath, string componentType, string propertyPath, string value)
     {
         this.objectPath = objectPath;
         this.componentType = componentType;
@@ -385,104 +501,148 @@ public class SetComponentPropertyCommand : AiderUnityCommandBase
         this.value = value;
     }
 
+    private object StringToObject(string value, Type type)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+
+        if (value.StartsWith("{") && value.EndsWith("}"))
+        {
+            Debug.Log($"Parsing JSON value: {value} to type: {type}");
+            return JsonUtility.FromJson(value, type);
+        }
+        else if (typeof(UnityEngine.Object).IsAssignableFrom(type) && IsAssetPath(value))
+        {
+            Debug.Log($"Loading asset at path: {value}");
+            return UnityEditor.AssetDatabase.LoadAssetAtPath(value, type);
+        }
+        else if (typeof(UnityEngine.Object).IsAssignableFrom(type) && IsTransformPath(value))
+        {
+            Debug.Log($"Loading transform at path: {value}");
+            var go = FindObjectUtil.FindObjectWithScenePath(value);
+            if (go == null)
+            {
+                throw new ArgumentException($"GameObject at path '{value}' not found.");
+            }
+
+            if (type == typeof(GameObject))
+            {
+                return go;
+            }
+            else
+            {
+                var component = go.GetComponent(type);
+                if (component == null)
+                {
+                    throw new ArgumentException($"Component of type '{type.Name}' not found on GameObject at path '{value}'.");
+                }
+                return component;
+            }
+        }
+        else if (type.BaseType == typeof(UnityEngine.Object))
+        {
+            throw new ArgumentException($"Cannot get object reference for type '{type.Name}' from string '{value}'. Use a valid asset path or transform path.");
+        }
+        else if (type.IsEnum)
+        {
+            Debug.Log($"Converting value: {value} to enum type: {type}");
+            object enumValue;
+            try
+            {
+                enumValue = Enum.Parse(type, value, true);
+            }
+            catch (Exception e)
+            {
+                var names = type.GetEnumNames();
+                Debug.LogError($"Enum names: {string.Join(", ", names)}");
+                Debug.LogError($"Error parsing enum value: {e.Message}");
+                throw new ArgumentException($"Invalid enum value '{value}' for type '{type.Name}'. Valid values are: {string.Join(", ", names)}", e);
+            }
+
+            return enumValue;
+        }
+        else
+        {
+            Debug.Log($"Converting value: {value} to type: {type}");
+            return Convert.ChangeType(value, type);
+        }
+    }
+
     protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing SetComponentPropertyCommand: {objectPath}, {componentType}, {propertyPath}");
-        GameObject targetObject = GameObject.Find(objectPath);
+        GameObject targetObject = FindObjectUtil.FindObjectWithScenePath(objectPath);
         if (targetObject != null)
         {
             Type type = UnityJsonCommandParser.FindType(componentType, false, true);
             if (type != null)
             {
-                Component component = targetObject.GetComponent(type);
+                UnityEngine.Object component = type == typeof(GameObject) ? targetObject : targetObject.GetComponent(type);
                 if (component != null)
                 {
                     try
                     {
-                        // Split property path for nested properties
-                        string[] propertyPathParts = propertyPath.Split('/');
-                        object targetObj = component;
-                        
-                        // Navigate to the final property
-                        for (int i = 0; i < propertyPathParts.Length - 1; i++)
+                        var componentType = component.GetType();
+                        var property = componentType.GetProperty(propertyPath);
+                        var field = componentType.GetField(propertyPath);
+
+                        if (property == null && field == null)
                         {
-                            var property = targetObj.GetType().GetProperty(propertyPathParts[i]);
-                            if (property != null)
+                            // try ignoring case
+                            property = componentType.GetProperty(propertyPath, BindingFlags.IgnoreCase);
+                            field = componentType.GetField(propertyPath, BindingFlags.IgnoreCase);
+                        }
+
+                        if (propertyPath.StartsWith("m_") && property == null && field == null)
+                        {
+                            // try to find without the m_ prefix
+                            var propertyName = propertyPath[2..];
+                            property = componentType.GetProperty(propertyName);
+                            field = componentType.GetField(propertyName);
+
+                            if (property == null && field == null)
                             {
-                                targetObj = property.GetValue(targetObj);
-                            }
-                            else
-                            {
-                                var field = targetObj.GetType().GetField(propertyPathParts[i]);
-                                if (field != null)
-                                {
-                                    targetObj = field.GetValue(targetObj);
-                                }
-                                else
-                                {
-                                    return new CommandFeedback($"Property or field '{propertyPathParts[i]}' not found on {targetObj.GetType().Name}", CommandStatus.Error);
-                                }
+                                // try ignoring case
+                                property = componentType.GetProperty(propertyName, BindingFlags.IgnoreCase);
+                                field = componentType.GetField(propertyName, BindingFlags.IgnoreCase);
                             }
                         }
 
-                        // Set the final property value
-                        string finalProperty = propertyPathParts[propertyPathParts.Length - 1];
-                        var finalPropertyInfo = targetObj.GetType().GetProperty(finalProperty);
-                        if (finalPropertyInfo != null)
+                        if (property != null)
                         {
-                            if (value is string stringValue && IsAssetPath(stringValue))
+                            var newValue = StringToObject(value?.ToString(), property.PropertyType);
+                            Debug.Log($"Setting property '{propertyPath}' to value '{newValue}' from '{value}' of type '{property.PropertyType}' on {componentType.Name}");
+                            property.SetValue(component, newValue, null); 
+
+                            // check to make sure the value is now correctly set
+                            var currentValue = property.GetValue(component, null);
+                            if (!Equals(currentValue, newValue))
                             {
-                                // Load and assign asset
-                                object asset = UnityEditor.AssetDatabase.LoadAssetAtPath(stringValue, finalPropertyInfo.PropertyType);
-                                if (asset != null)
-                                {
-                                    finalPropertyInfo.SetValue(targetObj, asset);
-                                    return new CommandFeedback($"Set property {propertyPath} to asset at {value}", CommandStatus.Success);
-                                }
-                                else
-                                {
-                                    return new CommandFeedback($"Failed to load asset at path: {stringValue}", CommandStatus.Error);
-                                }
+                                return new CommandFeedback($"Property '{propertyPath}' not set correctly on {componentType.Name}", CommandStatus.Error);
                             }
-                            else
+
+                            return new CommandFeedback($"Property '{propertyPath}' set on {componentType.Name}", CommandStatus.Success);
+                        }
+                        else if (field != null)
+                        {
+                            var newValue = StringToObject(value?.ToString(), field.FieldType);
+                            Debug.Log($"Setting field '{propertyPath}' to value '{newValue}' from '{value}' of type '{field.FieldType}' on {componentType.Name}");
+                            field.SetValue(component, newValue);
+
+                            // check to make sure the value is now correctly set
+                            var currentValue = field.GetValue(component);
+                            if (!Equals(currentValue, newValue))
                             {
-                                // Use the original conversion logic
-                                object convertedValue = Convert.ChangeType(value, finalPropertyInfo.PropertyType);
-                                finalPropertyInfo.SetValue(targetObj, convertedValue);
-                                return new CommandFeedback($"Set property {propertyPath} to {value}", CommandStatus.Success);
+                                return new CommandFeedback($"Field '{propertyPath}' not set correctly on {componentType.Name}", CommandStatus.Error);
                             }
+
+                            return new CommandFeedback($"Field '{propertyPath}' set on {componentType.Name}", CommandStatus.Success);
                         }
                         else
                         {
-                            var finalFieldInfo = targetObj.GetType().GetField(finalProperty);
-                            if (finalFieldInfo != null)
-                            {
-                                if (value is string stringValue && IsAssetPath(stringValue))
-                                {
-                                    // Load and assign asset
-                                    object asset = UnityEditor.AssetDatabase.LoadAssetAtPath(stringValue, finalFieldInfo.FieldType);
-                                    if (asset != null)
-                                    {
-                                        finalFieldInfo.SetValue(targetObj, asset);
-                                        return new CommandFeedback($"Set field {propertyPath} to asset at {value}", CommandStatus.Success);
-                                    }
-                                    else
-                                    {
-                                        return new CommandFeedback($"Failed to load asset at path: {stringValue}", CommandStatus.Error);
-                                    }
-                                }
-                                else
-                                {
-                                    // Use the original conversion logic
-                                    object convertedValue = Convert.ChangeType(value, finalFieldInfo.FieldType);
-                                    finalFieldInfo.SetValue(targetObj, convertedValue);
-                                    return new CommandFeedback($"Set field {propertyPath} to {value}", CommandStatus.Success);
-                                }
-                            }
-                            else
-                            {
-                                return new CommandFeedback($"Property or field '{finalProperty}' not found on {targetObj.GetType().Name}", CommandStatus.Error);
-                            }
+                            return new CommandFeedback($"Property or field '{propertyPath}' not found on {componentType.Name}", CommandStatus.Error);
                         }
                     }
                     catch (Exception e)
@@ -518,6 +678,11 @@ public class SetComponentPropertyCommand : AiderUnityCommandBase
         return false;
     }
 
+    private bool IsTransformPath(string value)
+    {
+        return value.Contains("/") && FindObjectUtil.FindObjectWithScenePath(value) != null;
+    }
+
     public override VisualElement BuildDisplay()
     {
         var container = new VisualElement();
@@ -540,7 +705,7 @@ public class DeleteObjectCommand : AiderUnityCommandBase
     protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing DeleteObjectCommand: {objectPath}");
-        GameObject targetObject = GameObject.Find(objectPath);
+        GameObject targetObject = FindObjectUtil.FindObjectWithScenePath(objectPath);
         if (targetObject != null)
         {
             UnityEngine.Object.DestroyImmediate(targetObject);
@@ -576,7 +741,7 @@ public class CreatePrefabCommand : AiderUnityCommandBase
     protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing CreatePrefabCommand: {objectPath} to {prefabPath}");
-        GameObject targetObject = GameObject.Find(objectPath);
+        GameObject targetObject = FindObjectUtil.FindObjectWithScenePath(objectPath);
         if (targetObject != null)
         {
             try
@@ -654,7 +819,7 @@ public class InstantiatePrefabCommand : AiderUnityCommandBase
                 // Set parent if provided
                 if (!string.IsNullOrEmpty(parentPath))
                 {
-                    GameObject parentObject = GameObject.Find(parentPath);
+                    GameObject parentObject = FindObjectUtil.FindObjectWithScenePath(parentPath);
                     if (parentObject != null)
                     {
                         instance.transform.SetParent(parentObject.transform, false);
@@ -704,7 +869,7 @@ public class SetParentCommand : AiderUnityCommandBase
     protected override async Task<CommandFeedback> ExecuteCommand()
     {
         Debug.Log($"Executing SetParentCommand: {objectPath} to parent {parentPath}");
-        GameObject targetObject = GameObject.Find(objectPath);
+        GameObject targetObject = FindObjectUtil.FindObjectWithScenePath(objectPath);
         if (targetObject != null)
         {
             GameObject parentObject = null;
@@ -716,7 +881,7 @@ public class SetParentCommand : AiderUnityCommandBase
                 return new CommandFeedback($"Unparented {objectPath}", CommandStatus.Success);
             }
             
-            parentObject = GameObject.Find(parentPath);
+            parentObject = FindObjectUtil.FindObjectWithScenePath(parentPath);
             if (parentObject != null)
             {
                 targetObject.transform.SetParent(parentObject.transform, worldPositionStays);

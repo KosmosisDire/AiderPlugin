@@ -25,6 +25,17 @@
             ]
         },
         {
+            "scenePath": "EventSystem",
+            "tag": "Untagged",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform",
+                "EventSystem",
+                "StandaloneInputModule"
+            ]
+        },
+        {
             "scenePath": "Main Camera",
             "tag": "MainCamera",
             "layer": "Default",
@@ -34,6 +45,16 @@
                 "Camera",
                 "AudioListener",
                 "SmoothFollow"
+            ]
+        },
+        {
+            "scenePath": "Main Camera/EnemySpawner",
+            "tag": "Untagged",
+            "layer": "Default",
+            "isActive": true,
+            "components": [
+                "Transform",
+                "EnemySpawner"
             ]
         },
         {
@@ -67,6 +88,80 @@
             "isActive": true,
             "components": [
                 "Transform"
+            ]
+        },
+        {
+            "scenePath": "UICanvas",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "Canvas",
+                "CanvasScaler",
+                "GraphicRaycaster",
+                "UIManager"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/ScoreText",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "CanvasRenderer",
+                "TextMeshProUGUI"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/Slider",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "Slider"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/Slider/Background",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "CanvasRenderer",
+                "Image"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/Slider/Fill Area",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/Slider/Fill Area/Fill",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform",
+                "CanvasRenderer",
+                "Image"
+            ]
+        },
+        {
+            "scenePath": "UICanvas/Slider/Handle Slide Area",
+            "tag": "Untagged",
+            "layer": "UI",
+            "isActive": true,
+            "components": [
+                "RectTransform"
             ]
         }
     ]

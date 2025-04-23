@@ -102,7 +102,7 @@ public class Client : Editor
         while (totalBytesRead < count)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            int bytesRead = await stream.ReadAsync(buffer, offset + totalBytesRead, count - totalBytesRead, cancellationToken);
+            int bytesRead = await stream.ReadAsync(buffer, offset + totalBytesRead, count - totalBytesRead);
             if (bytesRead == 0)
             {
                 throw new EndOfStreamException($"Stream ended while trying to read {count} bytes. Read {totalBytesRead} bytes.");
@@ -114,8 +114,6 @@ public class Client : Editor
         {
             throw new IOException($"Expected to read {count} bytes, but only read {totalBytesRead} bytes.");
         }
-
-        //Debug.Log($"Read {count} of {totalBytesRead} bytes from stream.");
     }
 
     private static async Task<AiderResponse> ReceiveSingleResponseAsync(int timeout = 0, CancellationToken cancellationToken = default)

@@ -8,6 +8,7 @@ using System.Reflection;
 using Microsoft.CSharp;
 using System.CodeDom;
 using System.Linq;
+using UnityEditor.UIElements;
 
 
 public static class SceneInfoGenerator
@@ -144,13 +145,20 @@ public static class SceneInfoGenerator
 
         var typeObj = refProperty?.PropertyType ?? refField?.FieldType ?? null;
         type = typeObj?.Name ?? type;
-        
-        if (hasProperty) value = GetObjectString(refProperty.GetValue(component, null));
-        else if (hasField) value = GetObjectString(refField.GetValue(component));
-
-        if (property.isArray)
+        try
         {
-            value = ArrayValue(property);
+            if (hasProperty) value = GetObjectString(refProperty.GetValue(component, null));
+            else if (hasField) value = GetObjectString(refField.GetValue(component));
+
+            if (property.isArray)
+            {
+                value = ArrayValue(property);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error getting value for {name}: {e.Message}");
+            value = "unknown";
         }
 
         // get public status
@@ -215,7 +223,7 @@ public static class SceneInfoGenerator
         var sceneName = SceneManager.GetActiveScene().name;
         var unityVersion = Application.unityVersion;
 
-        var transforms = GameObject.FindObjectsByType<Transform>(FindObjectsSortMode.None);
+        var transforms = GameObject.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         var objectInfos = new List<SceneObjectInfoSimple>();
 
         foreach (var t in transforms)
@@ -259,6 +267,7 @@ public static class SceneInfoGenerator
         return JsonUtility.ToJson(objectInfo, true);
     }
 
+
     public static void SaveSceneInfoToFile(string filePath)
     {
         string sceneInfoJson = GetSceneInfoJson();
@@ -273,7 +282,9 @@ public static class SceneInfoGenerator
         Debug.Log("Scene info: " + GetSceneInfoJson());
         SaveSceneInfoToFile(filePath);
 
-        string detailedInfo = GetDetailedObjectInfo(Selection.activeGameObject);
+        var selection = Selection.activeGameObject;
+        if (selection == null) return;
+        string detailedInfo = GetDetailedObjectInfo(selection);
         Debug.Log("Detailed object info: " + detailedInfo);
         string detailedFilePath = "Assets/DetailedObjectInfo.json";
         File.WriteAllText(detailedFilePath, detailedInfo);

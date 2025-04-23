@@ -36,8 +36,10 @@ public class AiderChatWindow : EditorWindow
     }
 
 
-    private async Task CreateGUI()
+    private async void CreateGUI()
     {
+        chatList = null;
+
         var currentChat = EditorPrefs.GetString("Aider-CurrentChat", "");
         if (currentChat != "")
         {
@@ -70,7 +72,10 @@ public class AiderChatWindow : EditorWindow
         root.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Editor/AiderWindow.uss"));
         root.AddToClassList(EditorGUIUtility.isProSkin ? "dark-mode" : "light-mode");
         root.AddToClassList("aider-chat-window");
-        if (chatList != null) root.Add(chatList);
+        if (chatList != null)
+        {
+            root.Add(chatList);
+        }
         
         if (currentChat == "")
         {
@@ -176,25 +181,25 @@ public class AiderChatWindow : EditorWindow
         newChatButton.AddToClassList("new-chat-button");
         header.Add(newChatButton);
 
+        contextList.Update(await Client.GetContextList()); // this goes before the chat is replaced, so the scroll to bottom isn't messed up
+
         ReplaceChat(chatList);
         ShowChat();
-
-        contextList.Update(await Client.GetContextList());
-
     }
 
     private async Task UpdateScene()
     {
         string sceneInfo = SceneInfoGenerator.GetSceneInfoJson();
-        bool success = await Client.AddFileFromMemory($"{SceneManager.GetActiveScene().name}", sceneInfo);
-        if (success)
-        {
-            Debug.Log("Scene info updated");
-        }
-        else
-        {
-            Debug.LogError("Failed to update scene info");
-        }
+        bool success = await Client.AddFileFromMemory($"_{SceneManager.GetActiveScene().name}", sceneInfo);
+        
+        if (success) Debug.Log("Scene info updated");
+        else Debug.LogError("Failed to update scene info");
+
+        string gameObjectMenu = string.Join("\n", MenuItemsUtility.GetMenuItems("GameObject"));
+        success = await Client.AddFileFromMemory("_GameObjectMenu", gameObjectMenu);
+
+        if (success) Debug.Log("GameObject menu updated");
+        else Debug.LogError("Failed to update GameObject menu");
     }
 
     public async Task SendCurrentMessage()
@@ -208,7 +213,7 @@ public class AiderChatWindow : EditorWindow
         _ = Client.ReceiveAllResponesAsync(HandleResponse);
     }
 
-    public void ReplaceChat(AiderChatList chat)
+    public async Task ReplaceChat(AiderChatList chat)
     {
         VisualElement root = rootVisualElement;
         int index = root.IndexOf(chatList);
@@ -224,6 +229,8 @@ public class AiderChatWindow : EditorWindow
 
         chatList = chat;
         root.Insert(index, chatList);
+        await Task.Delay(100);
+        chatList.ScrollToBottom();
     }
 
     public void ShowChat(bool withFooter = true)

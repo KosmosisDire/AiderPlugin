@@ -105,34 +105,41 @@ class UnityJsonCommandParser
                     switch (commandType)
                     {
                         case "addObject":
-                            command = JsonUtility.FromJson<AddObjectCommand>(commandBlock) as AiderUnityCommandBase;
+                            command = JsonUtility.FromJson<AddObjectCommand>(commandBlock);
+                            break;
+                        case "addObjectMenu":
+                            command = JsonUtility.FromJson<AddObjectMenuCommand>(commandBlock);
                             break;
                         case "addComponent":
-                            command = JsonUtility.FromJson<AddComponentCommand>(commandBlock) as AiderUnityCommandBase;
+                            command = JsonUtility.FromJson<AddComponentCommand>(commandBlock);
                             break;
                         case "executeCode":
-                            command = JsonUtility.FromJson<ExecuteCodeCommand>(commandBlock) as AiderUnityCommandBase;
-                            // Debug.Log($"Command: {command}; Code: {commandBlock}");
+                            command = JsonUtility.FromJson<ExecuteCodeCommand>(commandBlock);
                             break;
                         case "setComponentProperty":
-                            command = JsonUtility.FromJson<SetComponentPropertyCommand>(commandBlock) as AiderUnityCommandBase;
+                            var setPropCommand = JsonUtility.FromJson<SetComponentPropertyCommand>(commandBlock);
+                            var valueString = Regex.Match(commandBlock, @"""value"":(.+)").Groups[1].Value.Trim();
+                            valueString = valueString.Trim('"');
+                            setPropCommand.value = valueString;
+                            command = setPropCommand;
                             break;
                         case "deleteObject":
-                            command = JsonUtility.FromJson<DeleteObjectCommand>(commandBlock) as AiderUnityCommandBase;
+                            command = JsonUtility.FromJson<DeleteObjectCommand>(commandBlock);
                             break;
                         case "createPrefab":
-                            command = JsonUtility.FromJson<CreatePrefabCommand>(commandBlock) as AiderUnityCommandBase;
+                            command = JsonUtility.FromJson<CreatePrefabCommand>(commandBlock);
                             break;
                         case "instantiatePrefab":
-                            command = JsonUtility.FromJson<InstantiatePrefabCommand>(commandBlock) as AiderUnityCommandBase;
+                            command = JsonUtility.FromJson<InstantiatePrefabCommand>(commandBlock);
                             break;
                         case "setParent":
-                            command = JsonUtility.FromJson<SetParentCommand>(commandBlock) as AiderUnityCommandBase;
+                            command = JsonUtility.FromJson<SetParentCommand>(commandBlock);
                             break;
                     }
-
+ 
                     if (command != null)
                     {
+                        command.sourceJson = commandBlock;
                         commands.Add(command);
                     }
                 }

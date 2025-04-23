@@ -626,14 +626,25 @@
     margin-bottom: 10px;
 }
 
-.command-execute-button
+.command-execute-button, .command-source-button
 {
     position: absolute;
-    right: 10px;
     top: 10px;
-    width: 20px;
-    height: 20px;
+    width: 25px;
+    height: 25px;
     background-image: var(--play-icon);
     background-color: var(--surface-color);
+    background-size: 35%;
+}
+
+.command-execute-button
+{
+    right: 10px;
+}
+
+.command-source-button
+{
+    right: 45px;
+    background-image: var(--copy-icon);
     background-size: 50%;
 }
