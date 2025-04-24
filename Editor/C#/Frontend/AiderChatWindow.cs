@@ -69,7 +69,7 @@ public class AiderChatWindow : EditorWindow
         await Client.ConnectToBridge();
 
         VisualElement root = rootVisualElement;
-        root.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Editor/AiderWindow.uss"));
+        root.styleSheets.Add(Resources.Load<StyleSheet>("UnityAIStyle"));
         root.AddToClassList(EditorGUIUtility.isProSkin ? "dark-mode" : "light-mode");
         root.AddToClassList("aider-chat-window");
         if (chatList != null)

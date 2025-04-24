@@ -2,8 +2,8 @@ import os
 import random
 import socket
 import time
-import aider_main
-from interface import AiderCommand, AiderRequest, AiderRequestHeader, AiderResponse
+import Editor.Python.aider as aider
+from network_interface import AiderCommand, AiderRequest, AiderRequestHeader, AiderResponse
 
 
 # taken from https://stackoverflow.com/questions/17667903/python-socket-receive-large-amount-of-data
@@ -95,7 +95,7 @@ class Server:
         self.close()
 
 def main():
-    aider_main.init()
+    aider.init()
     with Server() as server:
         while True: # continue to listen for new connections
             server.start()
@@ -111,7 +111,7 @@ def main():
                 command_name = request.get_command_string()
                 print(f"Received command: {command_name}")
 
-                coder = aider_main.coder
+                coder = aider.coder
 
                 match command:
                     case AiderCommand.UNKNOWN:
@@ -167,13 +167,13 @@ def main():
                         continue 
 
                 full_output = ""
-                for output in aider_main.send_message_get_output(request.content):
+                for output in aider.send_message_get_output(request.content):
                     full_output += output
                     server.send(AiderResponse(output, False, True))
 
-                print(f"Tokens sent: {aider_main.tokens_sent}, Tokens received: {aider_main.tokens_received}, Message cost: {aider_main.message_cost}, Session cost: {aider_main.total_cost}")
+                print(f"Tokens sent: {aider.tokens_sent}, Tokens received: {aider.tokens_received}, Message cost: {aider.message_cost}, Session cost: {aider.total_cost}")
                 
-                server.send(AiderResponse(full_output, True, False, False, aider_main.tokens_sent, aider_main.tokens_received, aider_main.message_cost, aider_main.total_cost))
+                server.send(AiderResponse(full_output, True, False, False, aider.tokens_sent, aider.tokens_received, aider.message_cost, aider.total_cost))
 
 if __name__ == "__main__":
     main()

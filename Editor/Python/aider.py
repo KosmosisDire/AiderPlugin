@@ -1,4 +1,3 @@
-import io as stdio
 import os
 import sys
 from aider.coders import Coder
@@ -12,7 +11,6 @@ from aider.repo import ANY_GIT_ERROR, GitRepo
 import aider.coders as coders
 from unity_coder import UnityCoder
 from aider.watch import FileWatcher
-from aider.history import ChatSummary
 
 total_cost = 0.0
 message_cost = 0.0

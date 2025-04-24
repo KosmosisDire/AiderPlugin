@@ -266,27 +266,4 @@ public static class SceneInfoGenerator
 
         return JsonUtility.ToJson(objectInfo, true);
     }
-
-
-    public static void SaveSceneInfoToFile(string filePath)
-    {
-        string sceneInfoJson = GetSceneInfoJson();
-        File.WriteAllText(filePath, sceneInfoJson);
-        Debug.Log("Scene info saved to " + filePath);
-    }
-
-    [MenuItem("Aider/Print Scene Info")]
-    public static void PrintSceneInfo()
-    {
-        string filePath = "Assets/SceneInfo.json";
-        Debug.Log("Scene info: " + GetSceneInfoJson());
-        SaveSceneInfoToFile(filePath);
-
-        var selection = Selection.activeGameObject;
-        if (selection == null) return;
-        string detailedInfo = GetDetailedObjectInfo(selection);
-        Debug.Log("Detailed object info: " + detailedInfo);
-        string detailedFilePath = "Assets/DetailedObjectInfo.json";
-        File.WriteAllText(detailedFilePath, detailedInfo);
-    }
 }

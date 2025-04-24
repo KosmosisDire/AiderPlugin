@@ -21,7 +21,7 @@ public struct ChatMetadata
 public class AiderChatHistory : ScrollView
 {
     public List<ChatMetadata> availableChats;
-    public static string ChatSavePath => "Assets/AiderUI/chats";
+    public static string ChatSavePath => UnityAIUtils.GetPath("Data/Chats/");
     private AiderChatWindow chatSession;
 
     public AiderChatHistory(AiderChatWindow chatSession)

@@ -36,7 +36,7 @@ public static class AiderRunner
             }
             
             Debug.Log("Aider Bridge is not running, starting it now.");
-            aiderBridge = RunPython("Backend/aider-bridge.py");
+            aiderBridge = RunPython(UnityAIUtils.GetPath("Python/bridge.py"));
             OnNewAiderSessionStarted?.Invoke();
             EditorPrefs.SetString("Aider-CurrentChat", "");
             return true;
