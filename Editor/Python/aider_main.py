@@ -11,6 +11,7 @@ from aider.repo import ANY_GIT_ERROR, GitRepo
 import aider.coders as coders
 from unity_coder import UnityCoder
 from aider.watch import FileWatcher
+from aider.models import MODEL_ALIASES
 
 total_cost = 0.0
 message_cost = 0.0
@@ -360,6 +361,9 @@ def init(argv=None, force_git_root=None):
 
     if args.cache_prompts and args.map_refresh == "auto":
         args.map_refresh = "files"
+
+    if (args.model is None):
+        args.model = list(MODEL_ALIASES.keys())[0]
 
     model = Model(model=args.model)
 

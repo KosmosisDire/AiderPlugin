@@ -6,3 +6,4 @@ __pycache__.meta
 # chats
 *AiderChat.json
 *AiderChat.json.meta
+.aider*
