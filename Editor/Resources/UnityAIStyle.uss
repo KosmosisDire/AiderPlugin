@@ -34,17 +34,17 @@
 .aider-chat-window
 {
     background-color: var(--background-color);
-    --send-icon: url("/Assets/Editor/Lucide/arrow-up.png");
-    --settings-icon: url("/Assets/Editor/Lucide/settings.png");
-    --add-icon: url("/Assets/Editor/Lucide/plus-circle.png");
-    --copy-icon: url("/Assets/Editor/Lucide/copy.png");
-    --check-icon: url("/Assets/Editor/Lucide/circle-check.png");
-    --close-icon: url("/Assets/Editor/Lucide/close.png");
-    --history-icon: url("/Assets/Editor/Lucide/history.png");
-    --empty-icon: url("/Assets/Editor/Lucide/bookmark-x.png");
-    --unity-icon: url("/Assets/Editor/Lucide/unity.png");
-    --trash-icon: url("/Assets/Editor/Lucide/trash-2.png");
-    --play-icon: url("/Assets/Editor/Lucide/play.png");
+    --send-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/arrow-up.png");
+    --settings-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/settings.png");
+    --add-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/plus-circle.png");
+    --copy-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/copy.png");
+    --check-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/circle-check.png");
+    --close-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/close.png");
+    --history-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/history.png");
+    --empty-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/bookmark-x.png");
+    --unity-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/unity.png");
+    --trash-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/trash-2.png");
+    --play-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/play.png");
 }
 
 /* Layout Elements */

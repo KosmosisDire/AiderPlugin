@@ -2,7 +2,7 @@ import os
 import random
 import socket
 import time
-import Editor.Python.aider as aider
+import aider_main as aider
 from network_interface import AiderCommand, AiderRequest, AiderRequestHeader, AiderResponse
 
 
