@@ -149,6 +149,7 @@ Important guidelines:
 - Do not run commands until you have all information needed.
 - Make sure any types you use in commands are fully defined using their full namespaces (e.g. UnityEngine.Object not just Object).
 - Do NOT make assumptions about what properties exist when setting stuff up.
+- Use the new input system and new UIToolkit if input or UI are needed, favor modern approaches over legacy ones.
 - ONLY ONE COMMAND PER CODE BLOCK.
 
 You MUST present your final command in a ```unity code block (not any other language).
@@ -181,8 +182,6 @@ Use the following rules for SEARCH/REPLACE blocks:
 
 {command_blocks}
 
-Put all new scripts in the Demo folder
-Use the new input system if input is needed, and hardcode inputs in the code unless the user asks otherwise. This is so no user setup is needed.
 """
 
 class UnityCoder(EditBlockCoder):
