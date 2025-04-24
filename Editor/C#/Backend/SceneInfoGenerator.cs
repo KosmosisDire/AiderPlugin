@@ -177,6 +177,11 @@ public static class SceneInfoGenerator
         if (typeObj == typeof(bool) && value == "True") value = "true";
         if (typeObj == typeof(bool) && value == "False") value = "false";
 
+        if (value.Length > 200)
+        {
+            value = value.Substring(0, 200) + "... (truncated for brevity)";
+        }
+
         return (name, type, value, isPublic);
     }
 

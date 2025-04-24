@@ -203,8 +203,7 @@ public class AiderConfigWindow : VisualElement
         // if config doesn't exist create it
         if (!File.Exists(configFilePath))
         {
-            File.WriteAllText(configFilePath, "");
-            return new Dictionary<string, object>();
+            File.WriteAllText(configFilePath, $"model: {models.Keys.First()}");
         }
 
         string yamlContent = File.ReadAllText(configFilePath);

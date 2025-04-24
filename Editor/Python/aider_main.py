@@ -246,18 +246,23 @@ def init(argv=None, force_git_root=None):
         git_root = get_git_root()
 
     conf_fname = Path(".aider.conf.yml")
-
     default_config_files = []
-    try:
-        default_config_files += [conf_fname.resolve()]  # CWD
-    except OSError:
-        pass
 
+    # cwd
+    if Path(conf_fname).resolve().exists():
+        default_config_files.append(conf_fname.resolve())
+
+    # git root
     if git_root:
-        git_conf = Path(git_root) / conf_fname  # git root
-        if git_conf not in default_config_files:
+        git_conf = Path(git_root) / conf_fname  
+        if git_conf not in default_config_files and Path(git_conf).exists():
             default_config_files.append(git_conf)
-    default_config_files.append(Path.home() / conf_fname)  # homedir
+    
+    # homedir
+    homedir_conf = Path.home() / conf_fname  
+    if homedir_conf not in default_config_files and Path(homedir_conf).exists():
+        default_config_files.append(homedir_conf)
+
     default_config_files = list(map(str, default_config_files))
 
     parser = get_parser(default_config_files, git_root)

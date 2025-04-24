@@ -236,12 +236,12 @@ public class Client : Editor
     public static async Task<bool> AddFileFromMemory(string fileName, string content)
     {
         // save file to temp directory
-        string tempPath = Path.Combine("Assets/AiderUI/Temp", fileName);
+        string tempPath = UnityAIUtils.GetPath($"Data/Temp/{fileName}");
         Directory.CreateDirectory(Path.GetDirectoryName(tempPath));
         File.WriteAllText(tempPath, content);
 
         // add file to context
-        if (!await Send(new AiderRequest(AiderCommand.Add, tempPath)))
+        if (!await Send(new AiderRequest(AiderCommand.Add, Path.GetFullPath(tempPath))))
         {
             return false;
         }
