@@ -1,0 +1,650 @@
+/* Theme Variables */
+.dark-mode
+{
+    --user-color: rgb(5,5,5);
+    --ai-color:rgb(60,60,60);
+    --user-color-muted: rgba(5,5,5, 0.5);
+    --ai-color-muted: rgba(60,60,60, 0.5);
+    --accent-color: rgb(54, 101, 255);
+    --surface-color: rgb(20, 20, 20);
+    --surface-color-muted: rgb(32, 32, 32);
+    --surface-color-transparent: rgba(32, 32, 32, 0.2);
+    --bright-text-color: rgba(255, 255, 255, 0.95);
+    --muted-text-color: rgba(255, 255, 255, 0.4);
+    --red-text-color: rgb(255, 107, 94);
+    --background-color: rgb(43, 43, 43);
+}
+
+.light-mode
+{
+    --user-color: rgb(150,150,150);
+    --ai-color:rgb(220,220,220);
+    --user-color-muted: rgba(150,150,150, 0.5);
+    --ai-color-muted: rgba(220,220,220, 0.5);
+    --accent-color: rgb(189, 110, 0);
+    --surface-color: rgb(219, 219, 219);
+    --surface-color-muted: rgb(172, 172, 172);
+    --surface-color-transparent: rgba(172, 172, 172, 0.2);
+    --bright-text-color: rgb(0, 0, 0);
+    --muted-text-color: rgba(0, 0, 0, 0.4);
+    --background-color: rgb(255, 255, 255);
+}   
+
+/* Main / Asset Vars */
+.aider-chat-window
+{
+    background-color: var(--background-color);
+    --send-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/arrow-up.png");
+    --settings-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/settings.png");
+    --add-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/plus-circle.png");
+    --copy-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/copy.png");
+    --check-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/circle-check.png");
+    --close-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/close.png");
+    --history-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/history.png");
+    --empty-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/bookmark-x.png");
+    --unity-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/unity.png");
+    --trash-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/trash-2.png");
+    --play-icon: url("/Packages/com.kosmosisdire.unity-ai/Editor/Resources/Lucide/play.png");
+}
+
+/* Layout Elements */
+.markdown-section
+{
+    flex-direction: column;
+    margin-bottom: 5px;
+}
+
+.chat-container
+{
+    flex-shrink: 1;
+    flex-grow: 1;
+    flex-direction: column;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 5px;
+}
+
+.history-container
+{
+    flex-shrink: 1;
+    flex-grow: 1;
+    flex-direction: column;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 10px;
+}
+
+.empty-container #unity-content-container
+{
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-content
+{
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    -unity-font-style: bold;
+}
+
+.empty-icon
+{
+    width: 100px;
+    height: 100px;
+    -unity-background-image-tint-color: var(--muted-text-color);
+    background-size: 100%;
+    margin-bottom: 10px;
+}
+
+.history-container .empty-icon
+{
+    background-image: var(--empty-icon);
+}
+
+.chat-container .empty-icon
+{
+    background-image: var(--unity-icon);
+    background-size: 80%;
+}
+
+.empty-content .unity-button
+{
+    height: 30px;
+    background-color: var(--accent-color);
+    border-radius: 5px;
+    font-size: 14px;
+    margin-top: 20px;
+}
+
+.header
+{
+    flex-shrink: 0;
+    flex-direction: row;
+    padding: 5px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    background-color: var(--surface-color);
+}
+
+.footer
+{
+    flex-shrink: 0;
+    flex-direction: column;
+    padding: 10px;
+    padding-bottom: 0px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    background-color: var(--surface-color);
+}
+
+.input-wrapper
+{
+    flex-direction: row;
+    width: 100%;
+}
+
+.config-window
+{
+    position: absolute;
+    top: 45px;
+    left: 0px;
+    padding: 8px;
+    border-radius: 10px;
+    max-width: 600px;
+    width: 70%;
+    background-color: var(--surface-color);
+}
+
+.config-window .unity-base-field
+{
+    margin-bottom: 5px;
+}
+
+.hide
+{
+    display: none;
+}
+
+/* Input Controls */
+.placeholder .unity-text-element
+{
+    opacity: 0.5;
+}
+
+.chat-input #unity-text-input
+{
+    background-color:rgba(0, 0, 0, 0);
+    border-color:rgba(0, 0, 0, 0);
+    white-space: pre-wrap;
+    max-height: 100px;
+    overflow: scroll;
+    height: 100%;
+}
+
+.chat-input .unity-text-element
+{
+}
+
+.chat-input
+{
+    flex-shrink: 1;
+    flex-grow: 1;
+    margin-right: 10px;
+    height: 100%;
+    font-size: 14px;
+}
+
+/* Message */
+.message-container
+{
+    padding: 10px;
+    padding-bottom: 20px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    border-width: 1px;
+    font-size: 14px;
+    min-width: 200px;
+}
+
+.message-container.is-ai
+{
+    background-color: var(--ai-color-muted);
+    margin-right: 60px;
+    color: var(--bright-text-color);
+}
+
+.message-container.is-user
+{
+    background-color: var(--user-color-muted);
+    margin-left: 60px;
+}
+
+.message-container.error-message
+{
+    border-color: var(--red-text-color);
+    background-color: rgba(255, 107, 94, 0.1);
+    color: var(--red-text-color);
+}
+
+.message-container #unity-text-input
+{
+    background-color:rgba(0, 0, 0, 0);
+    border-color:rgba(0, 0, 0, 0);
+    white-space: pre-wrap;
+}
+
+.message-container #unity-text-input .unity-text-element
+{
+    width: 100%;
+}
+
+/* Buttons / Interactive Elements */
+.unity-button
+{
+    -unity-background-image-tint-color: var(--bright-text-color);
+    scale: 1;
+    border-radius: 10px;
+    border-color: transparent;
+    transition: scale 0.2s, background-color 0.2s;
+    margin: 0;
+    cursor: link;
+}
+
+.unity-button:hover
+{
+    scale: 1.1;
+}
+
+.unity-button:active
+{
+    scale: 0.9;
+}
+
+.header .unity-button.button-active, 
+.header .unity-button.button-active:hover
+{
+    background-color: var(--accent-color);
+}
+.send-button
+{
+    width: 35px;
+    height: 35px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+    background-image: var(--send-icon);
+    background-color: var(--accent-color);
+    background-size: 70%;
+}
+
+.header .unity-button
+{
+    width: 30px;
+    height: 30px;
+    background-size: 60%;
+    background-color: transparent;
+}
+
+.header .unity-button:hover
+{
+    background-color: var(--surface-color-muted);
+}
+
+.settings-button
+{
+    margin-right: auto;
+    background-image: var(--settings-icon);
+}
+
+.session-cost-label
+{ 
+    position: absolute;
+    left: 45px;
+    font-size: 14px;
+    color: var(--surface-col);
+    bottom: 10px;
+}
+
+.history-button
+{
+    margin-right: 10px;
+    background-image: var(--history-icon);
+}
+
+.new-chat-button
+{
+    background-image: var(--add-icon); 
+    background-size: 65%;
+}
+
+.save-button
+{
+    margin-top: 15px;
+    width: 200px;
+    max-width: 80%;
+    align-self: center;
+}
+
+.message-container.is-ai .tokens-label
+{
+    font-size: 12px;
+    color: #888;
+    position: absolute;
+    bottom: 0;
+    right: 20px;
+    padding: 2px;
+}
+
+.message-container.is-user .tokens-label
+{
+    font-size: 12px;
+    color: #888;
+    position: absolute;
+    bottom: 0;
+    right: 5px;
+    padding: 2px;
+}
+
+.copy-button
+{
+    position: absolute;
+    right: -10px;
+    bottom: -10px;
+    width: 25px;
+    height: 25px;
+    background-image: var(--copy-icon);
+    background-color: var(--surface-color);
+    background-size: 50%;
+    transition: background-color 0.2s, scale 0.2s;
+    
+}
+
+.copy-button.confirm
+{
+    background-image: var(--check-icon);
+    background-color: var(--accent-color);
+    background-size: 65%;
+}
+
+.trash-button
+{
+    width: 26px;
+    height: 26px;
+    background-image: var(--trash-icon);
+    background-size: 50%;
+    background-color: transparent;
+    opacity: 0.5;
+    transition: background-color 0.2s, scale 0.2s, opacity 0.2s, -unity-background-image-tint-color 0.2s;
+}
+
+.trash-button:hover
+{
+    opacity: 1;
+    -unity-background-image-tint-color: var(--red-text-color);
+}
+
+/* Context Elements */
+.context-list
+{
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.context-item
+{
+    flex-direction: row;
+    padding: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-radius: 5px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    background-color: var(--background-color);
+    font-size: 12px;
+    -unity-font-style: bold;
+}
+
+.context-drop-button
+{
+    background-color: transparent;
+    background-image: var(--close-icon);
+    margin-right: 5px;
+}
+
+.context-drop-button:hover
+{
+    -unity-background-image-tint-color: var(--red-text-color);
+    scale: 1.2;
+}
+
+/* Markdown Elements */
+.table
+{
+    flex-direction: column;
+    overflow: scroll;
+    margin-bottom: 15px;
+    margin-top: 15px;
+}
+
+.table-content
+{
+    flex-direction: row;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: var(--surface-color);
+    width: 100%;
+}
+
+.table-column
+{
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.table-column.middle, .table-column.first
+{
+    border-right-width: 1px;
+    border-right-color: var(--muted-text-color);
+}
+
+.table-cell
+{
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 5px;
+}
+
+.table-cell.middle, .table-cell.first
+{
+    border-bottom-width: 1px;
+    border-bottom-color: var(--muted-text-color);
+}
+
+.table-cell.empty
+{
+    color: transparent;
+}
+
+.code-block
+{
+    background-color: var(--surface-color);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 15px;
+    margin-top: 15px;
+    font-size: 14px;
+    -unity-font: url("JetBrainsMono.ttf");
+    -unity-font-definition: url("JetBrainsMono.asset");
+}
+
+.language-label
+{
+    background-color: var(--surface-color-muted);
+    border-radius: 5px;
+    padding: 5px;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    opacity: 0.2;
+    transition: opacity 0.2s;
+}
+
+.language-label:hover
+{
+    opacity: 1;
+}
+
+
+.blockquote
+{
+    background-color: var(--surface-color-muted);
+    border-radius: 5px;
+    padding: 5px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    font-size: 14px;
+    border-left-width: 3px;
+    border-left-color: var(--accent-color);
+}
+
+/* History Elements */
+.history-card
+{
+    flex-direction: row;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    min-width: 200px;
+    background-color: var(--surface-color);
+    color: var(--bright-text-color);
+    cursor: link;
+    border-width: 1px;
+    transition: background-color 0.2s, border-color 0.2s;
+    border-color: rgba(0, 0, 0, 0.1);
+    justify-content: space-between;
+}
+
+.history-title-container
+{
+    flex-direction: column;
+}
+
+.history-title
+{
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin-bottom: 5px;
+    cursor: link;
+
+}
+
+.history-date
+{
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--muted-text-color);
+    cursor: link;
+}
+
+.history-card.hoverable-card:hover
+{
+    background-color: var(--surface-color-muted);
+    border-color: var(--muted-text-color);
+}
+
+/* Commands */
+
+.command-container
+{
+    background-color: var(--surface-color);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: var(--muted-text-color);
+    padding: 10px;
+    font-size: 14px;
+    -unity-font: url("JetBrainsMono.ttf");
+    -unity-font-definition: url("JetBrainsMono.asset");
+}
+
+.command-view .unity-label
+{
+    color: var(--muted-text-color);
+}
+
+.command-container .output-log
+{
+    display: none;
+    background-color: var(--surface-color-transparent);
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.command-container .output-log.has-output
+{
+    display: flex;
+}
+
+.command-container.command-executing
+{
+    background-color: rgba(70, 190, 254, 0.2);
+    border-color: rgba(136, 213, 254, 0.5);
+}
+
+.command-container.command-finished.command-success
+{
+    background-color: rgba(70, 254, 70, 0.2);
+    border-color: rgba(136, 254, 136, 0.5);
+}
+
+.command-container.command-finished.command-warning
+{
+    background-color: rgba(254, 255, 70, 0.2);
+    border-color: rgba(254, 255, 136, 0.5);
+}
+
+.command-container.command-finished.command-error
+{
+    background-color: rgba(255, 70, 70, 0.2);
+    border-color: rgba(255, 136, 136, 0.5);
+}
+
+.command-container *
+{
+    white-space: normal;
+}
+
+.command-title
+{
+    font-size: 14px;
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+}
+
+.command-execute-button, .command-source-button
+{
+    position: absolute;
+    top: 10px;
+    width: 25px;
+    height: 25px;
+    background-image: var(--play-icon);
+    background-color: var(--surface-color);
+    background-size: 35%;
+}
+
+.command-execute-button
+{
+    right: 10px;
+}
+
+.command-source-button
+{
+    right: 45px;
+    background-image: var(--copy-icon);
+    background-size: 50%;
+}

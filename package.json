@@ -1,0 +1,8 @@
+{
+    "name": "com.kosmosisdire.unity-ai",
+    "version": "0.0.1",
+    "displayName": "Unity AI",
+    "description": "Seamlessly integrates LLM control of the Unity Editor using Aider as a backend.",
+    "unity": "6000.0",
+    "documentationUrl": "https://github.com/KosmosisDire/unity-ai"
+}
