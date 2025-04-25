@@ -26,6 +26,7 @@ pip install aider-chat
 3. Select Install
 
 Installation Example:
+
 ![image](https://github.com/user-attachments/assets/198cf5e8-82e6-40c9-b822-e9c5368ab0e8)
 
 ![image](https://github.com/user-attachments/assets/aa52eb63-b3f4-4784-8fae-750a619ae110)
