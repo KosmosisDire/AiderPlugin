@@ -218,13 +218,13 @@ public class AiderChatWindow : EditorWindow
 
     private void UpdateSendEnabled()
     {
-        if (string.IsNullOrWhiteSpace(textField.value) || Client.IsStreaming)
+        if (string.IsNullOrWhiteSpace(textField?.value ?? "") || Client.IsStreaming)
         {
-            sendButton.SetEnabled(false);
+            sendButton?.SetEnabled(false);
         }
         else
         {
-            sendButton.SetEnabled(true);
+            sendButton?.SetEnabled(true);
         }
     }
 
