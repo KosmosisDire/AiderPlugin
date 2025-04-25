@@ -47,7 +47,7 @@ public static class AiderRunner
     // Runs the Python script for the bridge
     static Process RunPython(string pythonScriptPath)
     {
-        var path = Path.GetFullPath(pythonScriptPath);
+        var path = "\""+Path.GetFullPath(pythonScriptPath)+"\"";
 
         Process pythonProcess = new()
         {
